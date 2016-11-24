@@ -1,0 +1,1538 @@
+                    Nullsoft SHOUTcast Transcoder Version 2 (sc_trans)
+                                  AJAX API Specification
+                               (Last Updated 26 June 2011)
+
+
+1.0    Introduction
+1.1      Responses
+1.2      Calendar Tag
+1.2.1      Time Periodic Events
+2.0    Operations / Commands
+2.1      Test
+2.2      GetStatus
+2.3      GetOptions
+2.4      SetOptions
+2.5      GetEndpoints
+2.6      SetEndpoint
+2.7      DeleteEndpoint
+2.8      LogData
+2.9      AddPlaylist
+2.10     ListPlaylists
+2.11     PlaylistData
+2.12     DeletePlaylist
+2.13     ListEvents
+2.14     AddEvent
+2.15     DeleteEvent
+2.16     AbortEvent
+2.17     ListDJS
+2.18     DeleteDJ
+2.19     AddDJ
+2.20     ModifyDJ
+2.21     KickDJ
+2.22     UnkickDJ
+2.23     NextTrack
+2.24     Capture
+2.25     Restart
+2.26     Quit
+3.0    Notes About Playlist Handling
+3.1      Using Playlists
+3.2      Replacing Playlists
+3.3      Displaying Playlists
+3.4      Editing Playlists
+
+
+
+1.0   Introduction
+------------------
+
+All calls to the provided AJAX api are made as POST requests via the 'api' page i.e.
+http://localhost:4444/api and the parameters are passed in to it as POST parameters
+(application/x-www-form-urlencoded; charset=UTF-8). If 'charset' is not specified then
+UTF-8 is assumed and anything else will generate an error.
+
+All requests require at least two parameters:
+
+    'op' - this indicates the operation to be performed.
+    'seq' - this is a sequence number used as an identifier.
+
+The 'seq' parameter is merely an identifier that is returned in the resulting xml as the
+'seq' attribute in the <response> tag. This passed value can then be used to align
+requests and results in an asynchronous application.
+
+It is recommended that the value you passed in to the 'seq' parameter be a strictly
+increasing integer.
+
+
+1.1   Responses
+---------------
+
+Responses are returned as xml and all will have the following basic format:
+
+1    <?xml version="1.0" encoding="UTF-8" ?>
+2    <response seq="#" badsyntax="1|0">
+3      <error>..</error>
+4      <warning>...</warning>
+5      <restart/>
+6      <data>
+7      </data>
+8    </response>
+
+Line by line explanation:
+
+2. <response> is always the outer most tag. This will always have a 'seq' attribute which
+   will match with the value of the 'seq' parameter passed in for the request. If the
+   'badsyntax' attribute exists and is set to '1' then the request was rejected because
+   it was badly formed. The only subtag will then be <error> which will contain the error
+   message.
+
+3. The <error> tag will only appear if an error occurred executing the request. This can
+   be from a completely rejected request due to a bad syntax in which case the 'badsyntax'
+   attribute is set in the <response> tag as previously mentioned or due to a request that
+   failed due to some other problem in which case the other subfields may still exist.
+
+4. The <warning> tag will appear if there is a warning that must be conveyed to the user.
+
+5. If the value inside the <restart> tag is one then a restart of sc_trans is required to
+   complete the requested action (see section 2.25 for making sc_trans restart itself).
+
+6. Any returned data will be found inside the <data> tag.
+
+
+For simple commands that do not need to return data or do not have any errors or warnings
+then you will just get the <response> tag
+e.g.
+    <response seq="53">...</response>
+
+
+1.2   Calendar Tag
+------------------
+
+The <calendar> tag contains date information about scheduled events and it can contain
+the following attributes allowing for finer control over the event:
+
+    startdate    (specified as yyyy/mm/dd)
+    enddate      (specified as yyyy/mm/dd)
+    starttime    (specified as hh:mm:ss - 24 hour format)
+    duration     (specified as hh:mm:ss - 24 hour format)
+    timeoffset   (specified as hh:mm:ss - 24 hour format)
+    repeat       (numeric value)
+
+
+The 'startdate' and 'enddate' attributes indicate the date range the event is valid for
+otherwise the event will be ignored. Either value can be left out and if so then the
+event will be unbounded in that direction i.e. specifying no 'startdate' is the way to
+indicate the event takes effect when sc_trans starts.
+
+
+The 'starttime' and 'endtime' attributes work in a similar manner to the date ones for
+the event but are used when the associated 'startdate' is met. So if no 'starttime' is
+indicated then the event starts immediately on 'startdate'. So as you can see this could
+be left out along with 'startdate' to make events start always when sc_trans is started.
+
+
+The 'duration' attribute is the length of the scheduled event and if this is not
+specified then the event will end when 'enddate' (if specified) is reached.
+
+
+The 'repeat' attribute is a numeric code for an event which gives control over how an
+event will be repeated. The repeat attribute can be one of the following as listed below
+or a combination to create more complicated repeat patterns e.g. '62' will make an event
+repeat every day of the week (i.e. 2 + 4 + 8 + 16 + 32)
+
+    1 - Every Sunday
+    2 - Every Monday
+    4 - Every Tuesday
+    8 - Every Wednesday
+    16 - Every Thursday
+    32 - Every Friday
+    64 - Every Saturday
+    128 - Time periodic
+
+
+1.2.1   Time Periodic Events
+----------------------------
+
+Time periodic events are those which occur at regular intervals and are defined by the
+'starttime', 'timeoffset' and 'repeat' attributes allowing for control over the time
+interval between the event and the next instance of the event.
+
+The 'starttime' attribute is used to indicate the interval between this type of event and
+the next time it will occur. So with a number of these events you can have a jingle play
+at a specific time during the day at a consistent time.
+
+The 'timeoffset' atribute is used to indicate an offset from midnight at which the
+periodic event will be applied relative to the 'starttime' value. This will allow you to
+specify a specific time during the interval so if you wanted to have an event which is
+activated every hour but on the half hour you could do:
+
+    timeoffset="00:30:00"
+    starttime="01:00:00"
+
+
+If no other repeat field values are specified i.e. repeat isn't 128 then the event will
+be valid for every day of the week. If other values are specified then the event will be
+restricted to those days specified
+e.g.
+    repeat=190    repeats the event only during weekdays
+
+
+Important Note: If you use this on a playlist event then the event will be activated at
+                the specified time period after the last event successfully occurred but
+                the required file(s) will not be played until the currently playing file
+                has completed playing as playlist events add to the main playback queue
+                and do not act as an instant event as the capture and DJ events do.
+
+
+
+2.0   Operations / Commands
+---------------------------
+
+The following sections detail the operations which are supported by the api and will show
+you what results they will return (where applicable).
+
+
+2.1   Test
+----------
+
+The test operation does nothing of importance other than confirming the proper operation
+of the client and server link. This will return all of the parameters that were passed in
+to it allowing you to check all was correct if applicable.
+
+Parameters:
+
+    op = "test"
+    seq = 'any value'
+
+Result:
+
+    <param>
+      <key>....</key>
+      <value>....</value>
+    </param>
+
+
+Example:
+
+Request Parameters:
+
+    op=”text”
+    op="45"
+    foo=”bar”
+    go=”away”
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+      <data>
+        <op>test</op>
+        <seq>45</seq>
+        <foo>bar</foo>
+        <go>away</go>
+      </data>
+    </response>
+
+
+2.2   GetStatus
+---------------
+
+This will return the running status information about the current sc_trans instance
+allowing for a detailed look at what sc_trans is setup to be doing.
+
+Parameters:
+
+    op = "getstatus"
+    seq = 'any value'
+
+Results:
+
+    1    <status>
+    2      <activesource source="playlist|capture|dj|relay">
+    3        <currenttrack/>
+    4        <nexttrack/>
+    5        <name/>
+    6        <file/>
+    7        <ip/>
+    8        <port/>
+    9        <url/>
+    10       <sourcetype/>
+    11       <bitrate/>
+    12       <device/>
+    13       <input/>
+    14       <samplerate/>
+    15       <channels/>
+    16     </activesource>
+    17     <endpointlist>
+    18       <endpoint>
+    19         <name/>
+    20         <bytessent/>
+    21         <status/>
+    22       </endpoint>
+    23       <endpoint>
+    24         <name/>
+    25         <bytessent/>
+    26         <status/>
+    27       </endpoint>
+    28.      <!-- etc --->
+    29.    </endpointlist>
+    30.  </status>
+
+Line by line explanation:
+
+2. The type of source currently feeding the encoders is indicated by the source attribute
+   which can be one of: 'playlist' or 'capture' or 'dj' or 'relay'.
+
+3. If the source attribute of the <activesource> tag is 'playlist' then the text inside
+   this tag will be the currently playing track.
+
+4. If the source attribute of the <activesource> tag is 'playlist' then the text inside
+   this tag is the next track to be played.
+
+5. The name of either the playlist (logical) or DJ depending on the source attribute in
+   the <activesource> tag.
+
+6. Contains the filename of the playlist.
+
+7. Contains an IP address if this is a DJ connection.
+
+8. Contains the port the DJ is connected on if this is a DJ connection.
+
+9. Contains the url of a relayed source.
+
+10. The mime type of the source if it is a DJ or relay source connected.
+
+11. The bitrate of the stream if this is a relay source.
+
+12. The capture device being used if the source is capture.
+
+13. Capture input if source is capture.
+
+14. The sample rate if source is capture.
+
+15. The number of channels if the source is of type 'capture'.
+
+18. There can be zero or more of these <endpoint> tags which will provide some runtime
+    information about the endpoint(s) currently known by sc_trans.
+
+20. The number of bytes transmitted since the endpoint was started.
+
+21. The status message for the current endpoint.
+
+
+Example:
+
+Request Parameters:
+
+    op=”getstatus”
+    seq="45"
+
+Resulting XML:
+
+    1   <?xml version="1.0" encoding="UTF-8" ?>
+    2   <response seq="45">
+    3     <data>
+    4       <status>
+    5         <activesource source="dj">
+    6           <name>Neil Radisch</name>
+    7           <ip>10.10.70.100</ip>
+    8           <port>1234</port>
+    9           <sourcetype>aacp</sourcetype>
+    10        </activesource>
+    11        <endpointlist>
+    12          <endpoint>
+    13            <name>high bitrate mp3</name>
+    14            <bytessent>123456789</bytessent>
+    15            <status>Online</status>
+    16          </endpoint>
+    17        </endpointlist>
+    18      </status>
+    19    </data>
+    20  </response>
+
+
+2.3   GetOptions
+----------------
+
+This will return the sc_trans configuration options with each option being represented by
+its own subtag in the returned output. The following list is all of the options currently
+supported through GetOptions and SetOptions operations (see section 2.4 for 'SetOptions'
+usage). More details about these settings can be found in sc_trans.txt for each of the
+entries following:
+
+    serverintrofile         serverbackupfile           log
+    screenlog               djdebug                    flashpolicyserverdebug
+    fileconverterdebug      flashpolicyserverport      flashpolicyfile
+    unlockkeyname           unlockkeycode              capturedebug
+    shuffledebug            shoutcastdebug             uvoxdebug
+    gaindebug               playlistdebug              mp3encdebug
+    mp3decdebug             resamplerdebug             rgcalcdebug
+    apidebug                calendardebug              sourcerelaydebug
+    logfile                 streamtitle                sourceandendpointmanagerdebug
+    streamurl               public                     genre
+    aim                     irc                        icq
+    shuffle                 autodumpsourcetime         xfade
+    xfadethreshold          playlists                  archive
+    djport                  djport2                    djcipher
+    djbroadcasts            djfilepattern              adminport
+    adminpassword           adminuser                  capturedevice
+    captureinput            capturesamplerate          capturechannels
+    usemetadata             metadatapattern            applyreplaygain
+    defaultreplaygain       djreplaygain               djcapture
+    capturereplaygain       calculatereplaygain        replaygainrunahead
+    replaygaintmpdir        replaygaindontwrite        enhancereplaygain
+    configrewrite           uvoxmetadatafudgefactor    shoutcastmetadatafudgefactor
+    vuimagedirectory        vuimagesuffix              vuimagemimetype
+    calendarfile            calendarrewrite            nextlookahead
+
+
+Parameters:
+
+    op = "getoptions"
+    seq = 'any value'
+
+Results:
+
+    <data>
+      <options>
+        <logfile>/home/nradisch/sc_trans.log</logfile>
+        <streamtitle>...</streamtitle>
+        <public>...</public>
+        <usemetadata>...</usemetadata>
+        <!-- etc --->
+      </options>
+    </data>
+
+
+Example:
+
+Request Parameters:
+
+    op=”getoptions”
+    seq="45"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+    <data>
+       <options>
+         <logfile>/home/nradisch/sc_trans.log</logfile>
+         <streamtitle>neil's stream</streamtitle>
+         <public>1</public>
+         <usemetadata>1</usemetadata>
+         <!-- etc --->
+         </options>
+      </data>
+    </response>
+
+
+2.4   SetOptions
+----------------
+
+This allows for the setting of any of the sc_trans configuration options as listed in
+section 2.3 or see sc_trans.txt for more detailed information. Each option is it's own
+input parameter when using this operation.
+
+Parameters:
+
+    op = "setoptions"
+    seq = 'any value'
+
+
+Example:
+
+Request Parameters:
+
+    op=”setoptions”
+    seq="45"
+    logfile="/home/nradisch/newlog.log"
+    streamtitle="neil's crazy stream"
+    public=0
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+    </response>
+
+
+2.5   GetEndpoints
+------------------
+
+This will return information about the encoder / broadcaster endpoints.
+
+Parameters:
+
+    op = "getendpoints"
+    seq = 'any value'
+    name = logical name of a particular endpoint (optional)
+
+Results:
+
+Each combination of encoder and broadcaster target will appear inside an <endpoint> tag.
+The order in which the endpoint tags appear is significant since it implies the index
+used to access and modify specific endpoints.
+
+    1.   <endpointlist>
+    2.     <endpoint>
+    3.       <name/>
+    4.       <encoder type="aacp|mp3">
+    5.         <bitrate/>
+    6.         <samplerate/>
+    7.         <channels/>
+    8.         <mp3>
+    9.           <quality/>
+    10.          <mode/>
+    11.        </mp3>
+    12.      </encoder>
+    13.      <network protocol="#">
+    14.        <ip/>
+    15.        <port/>
+    16.        <uvox>
+    17.          <streamid/>
+    18.          <userid/>
+    19.          <auth/>
+    20.          <radiometadata/>
+    21.          <newmetadata/>
+    22.        </uvox>
+    23.        <shoutcast>
+    24.          <password/>
+    25.        </shoutcast>
+    26.      </network>
+    27.    </endpoint>
+    28.    <endpoint>...</endpoint>
+    29.  </endpointlist>
+
+Line by line explanation:
+
+3. The name of the endpoint.
+
+4. The type attribute shows the type of encoder which can be 'mp3' or 'aacp'.
+
+5. The text of tag is the bitrate value in bps.
+
+6. The sample rate for encoder.
+
+7. The number of channels for encoder.
+
+8. This subtag only exists if the <encoder> attribute type is 'mp3'.
+
+9. The quality value for mp3 encoder (see 'mp3quality in sc_trans.txt).
+
+10. The mode value for mp3 encoder (see 'mp3mode' in sc_trans.txt).
+
+13. The protocol attribute indicates the type of network connection. See 'outprotocol' in
+    sc_trans.txt for possible values.
+
+14. Contains the IP address for connection (see 'serverip' in sc_trans.txt).
+
+15. Contains the port used to connect on (see 'serverport' in sc_trans.txt).
+
+16. This subtag only exists if the <network> protocol attribute indicates we have a uvox
+    style connection.
+
+17. Contains the stream id for a uvox connection (see 'uvoxstreamid' in sc_trans.txt).
+
+18. Contains the user ID for a uvox connection (see 'uvoxuserid' in sc_trans.txt).
+
+19. Authentication token for uvox connections (see 'uvoxauth' in sc_trans.txt).
+
+20. Flag indicating if we should send radio style (3901) metadata (see 'uvoxradiometadata'
+    in sc_trans.txt).
+
+21. Flag indicating that we should send net style (3902) metadata (see 'uvoxnewmetadata'
+    in sc_trans.txt).
+
+23. This subtag only exists if the <network> protocol attribute indicates a SHOUTcast 1
+    connection.
+
+24. Contains the password for SHOUTcast connection (see 'password' in sc_trans.txt).
+
+
+Example:
+
+Request Parameters:
+
+    op=”getendpoints”
+    seq="45"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+      <data>
+        <endpointlist>
+          <endpoint>
+            <name>high bitrate mp3</name>
+            <encoder type="mp3">
+              <bitrate>128000</bitrate>
+              <samplerate>44100</samplerate>
+              <channels>2</channels>
+              <mp3>
+                <quality>0</quality>
+                <mode>0</mode>
+              </mp3>
+            </encoder>
+            <network protocol="1">
+              <ip>neil.radio.com</ip>
+              <port>8989</port>
+              <shoutcast>
+                <password>foobar</password>
+              </shoutcast>
+            </network>
+          </endpoint>
+          <endpoint>
+            <name>aacp endpoint</name>
+              <encoder type="aacp">
+                <bitrate>96000</bitrate>
+                <samplerate>48000</samplerate>
+                <channels>2</channels>
+              </encoder>
+              <network protocol="2">
+              <ip>neil.radio.com</ip>
+              <port>7979</port>
+              <uvox>
+                <streamid>1</streamid>
+                <userid>neil</userid>
+                <auth>foobar</auth>
+                <radiometadata>1</radiometadata>
+                <newmetadata>1</newmetadata>
+              </uvox>
+            </network>
+          </endpoint>
+        </endpointslist>
+      </data>
+    </response>
+
+
+2.6   SetEndpoint
+-----------------
+
+This is used to configure (or create) an encoder and network endpoint.
+
+Parameters:
+
+    op = "setendpoint"
+    seq = 'any value'
+    name = name of encoder. Created if it does not exist
+    encoder = type of encoder (mp3 or aacp)
+    bitrate = encoder bitrate
+    samplerate = encoder sample rate
+    channels = encoder channels
+    quality = quality value for mp3
+    mode = mode for mp3
+    protocol = numeric protocol value for network connection
+    ip = address for network connection
+    port = port for network connection
+    password = password for SHOUTcast network connection
+    streamid = uvox stream id
+    userid = uvox user id
+    auth = uvox authorization
+    radiometadata = radio metadata flag
+    newmetadata = new metadata flag
+
+Result:
+
+The returned xml will contain information about the endpoint (see example).
+
+
+Example:
+
+Request Parameters:
+
+    op=”setendpoint”
+    seq="45"
+    name="my mp3 encoder"
+    encoder=mp3
+    bitrate=96000
+    samplerate=44100
+    channels=2
+    quality=0
+    mode=0
+    protocol=1
+    ip="neil.radisch.com"
+    port=7979
+    password="foobar"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+      <data>
+        <endpoint>
+          <name>my mp3 encoder</name>
+          <encoder type="mp3">
+            <bitrate>96000</bitrate>
+            <samplerate>44100</samplerate>
+            <channels>2</channels>
+            <mp3>
+              <quality>0</quality>
+              <mode>0</mode>
+            </mp3>
+          </encoder>
+          <network protocol="1">
+            <ip>neil.radisch.com</ip>
+            <port>7979</port>
+            <password>foobar</password>
+            <shoutcast>
+              <password>foobar</ password >
+            </shoutcast>
+          </network>
+        </endpoint>
+      </data>
+    </response>
+
+
+2.7   DeleteEndpoint
+--------------------
+
+This will allow you to delete an existing endpoint from those sc_trans knows.
+
+Parameters:
+
+  op = "deleteendpoint"
+  seq = 'any value'
+  name = name of the endpoint
+
+Result:
+
+The returned xml contains information about the deleted endpoint (see example).
+
+
+Example:
+
+Request Parameters:
+
+    op=”deleteendpoint”
+    seq="45"
+    name="my mp3 encoder"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+      <data>
+        <endpoint>
+          <name>my mp3 encoder</name>
+          <encoder type="mp3">
+            <bitrate>96000</bitrate>
+            <samplerate>44100</samplerate>
+            <channels>2</channels>
+            <mp3>
+              <quality>0</quality>
+              <mode>0</mode>
+            </mp3>
+          </encoder>
+          <network protocol="1">
+            <ip>neil.radisch.com</ip>
+            <port>7979</port>
+            <password>foobar</password>
+            <shoutcast>
+              <metadatafudgefactor>0</metadatafudgefactor>
+            </shoutcast>
+          </network>
+        </endpoint>
+      </data>
+    </response>
+
+
+2.8   LogData
+-------------
+
+This operation returns data from the sc_trans logs for display / processing.
+
+Parameters:
+
+  op = "logdata"
+  seq = 'any value'
+
+Results:
+
+    <data>
+      <logdata>
+        <entry date="yyyy-mm-dd hh:mm:ss" type="W|I|D|E">
+          message text for the log entry
+        </entry>
+      </logdata>
+    </data>
+
+Each logdata entry has a date attribute which has a timestamp for the entry. In addition
+each entry has a type attribute which is one of the following values:
+
+    W - Warning Message
+    I - Informational Message
+    D - Debug Message
+    E - Error Message
+
+The text of the message is then stored inside of the tag. Note that sc_trans will only
+hold up to 100 backlogged messages. If there are more than that and these have been
+queued up since the last logdata request then the first message will indicate a gap in
+the data.
+
+
+Example:
+
+Request Parameters:
+
+    op=”logdata”
+    seq="45"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+      <data>
+        <logdata>
+          <entry date="2008-08-30 11:00:39" type="I">
+            [MAIN] Broadcast Receiver thread starting
+          </entry>
+          <entry date="2008-08-30 11:00:39" type="I">
+            [source] listening for connection on port 10000
+          </entry>
+          <entry date="2008-08-30 11:00:39" type="D">
+            [playlistMgr] priority counter is 0
+          </entry>
+        </logdata>
+      </data>
+    </response>
+
+
+2.9   AddPlaylist
+-----------------
+
+This allows for adding a playlist to those being tracked by sc_trans. They can be added
+either inline or as a reference to an actual file that is located on a drive which
+sc_trans can access.
+
+Adding additional playlists does not perform any specific scheduling actions. To be able
+to that you must add or update a scheduled event or set it to the main playlist inorder
+for sc_trans to use it.
+
+Parameters:
+
+    op = "addplaylist"
+    seq = 'any value'
+    name = name for playlist.
+    format = "list|file"
+    filename = name of referenced file
+    calcrg = 1|0
+    entry### = inline entries
+
+For a file reference the 'format' parameter needs to be set to 'file' and the 'filename'
+parameter is set to be the filepath of the file. For an inline submit then the 'format'
+parameter is set to 'list' and you then need to set some entry parameters to define it in
+the form of 'entry###'. Finally if the 'calcrg' parameter is set to one then replaygain
+is calculated against the playlist.
+
+
+Example:
+
+Request Parameters:
+
+    op=”addplaylist”
+    seq="45"
+    format="list"
+    name="foolist"
+    entry0="/home/nradisch/music/groovy.mp3"
+    entry1="/home/nradisch/music/rockon.mp3"
+    entry2="/home/nradisch/music/rockoff.mp3"
+
+Resulting XML:
+
+   <?xml version="1.0" encoding="UTF-8" ?>
+   <response seq="45">
+   </response>
+
+
+2.10   ListPlaylists
+--------------------
+
+This operation will return a list of the playlists registered with sc_trans.
+
+Parameters:
+
+    op = "listplaylists"
+    seq = 'any value'
+
+Result:
+
+    <currentplaylist/>
+    <masterplaylist/>
+    <playlists>
+      <playlist>
+        <name/>
+        <path/>
+      <playlist/>
+      <!-- etc --->
+    </playlists>
+
+
+Example:
+
+Request Parameters:
+
+    op=”listplaylists”
+    seq="45"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+      <data>
+        <currentplaylist>friday night special</currentplaylist>
+        <masterplaylist>main list</masterplaylist>
+        <playlists>
+          <playlist>
+            <name>main list</name>
+            <path>/foo/bar/mainlist.lst</path>
+          </playlist>
+          <playlist>
+            <name>friday night special</name>
+            <path>/neil/radisch/fns.pls</path>
+          </playlist>
+        </playlists>
+      </data>
+    </response>
+
+
+2.11   PlaylistData
+-------------------
+
+This operation allows you to get entries from the specified playlist.
+
+Parameters:
+
+    op = "playlistdata"
+    seq = 'any value'
+    name = name of the playlist
+    max = max # of entries to return (optional)
+    page = page of data (zero based, requires "max") (optional)
+
+Result:
+
+    <playlist total="#">
+      <entry/>
+      <entry/>
+      <!-- etc --->
+    </playlist>
+
+The "total" attribute is the total amount of entries in the entire playlist and is not
+the number of playlists visible on the page though it can be calculated by using the
+'ListPlaylists' operation (see section 2.10) and working out the number of <entry> tags
+in the output).
+
+
+Example:
+
+Request Parameters:
+
+    op=”playlistdata”
+    seq="45"
+    name="neils list"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+      <data>
+        <playlist total="2">
+          <entry>groovy.mp3</entry>
+          <entry>rockon.mp3</entry>
+        </playlist>
+      </data>
+    </response>
+
+
+2.12   DeletePlaylist
+---------------------
+
+This operation allows you to delete a playlist from those stored by sc_trans.
+
+Parameters:
+
+    op = "deleteplaylist"
+    seq = 'any value'
+    name = name of playlist to delete
+    deletefile = 1 or 0. If 1 then delete the underlying file (Default is zero)
+
+
+Example:
+
+Request Parameters:
+
+    op=”deleteplaylist”
+    seq="45"
+    name="friday night special"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+    </response>
+
+
+2.13   ListEvents
+-----------------
+
+This will allow you to get a list of all of the scheduled events known by sc_trans
+(providing an output much like the calendar.xml file would be).
+
+Parameters:
+
+    op = "listevents"
+    seq = 'any value'
+
+Result:
+
+    <eventlist>
+      <event type="playlist|dj|relay">
+        <active/>
+        <id/>
+        <dj/>
+        <playlist loopatend="1|0" shuffle="1|0" priority="#">
+          nameofplaylist
+        </playlist>
+        <relay url=""/>
+        <calendar/>
+      </event>
+      <event ... />
+      <!-- etc --->
+    </eventlist>
+
+Line by line explanation:
+
+2. Each event has an <event> tag where type is 'playlist' or 'relay' or 'dj'.
+
+3. Returns 1 if the event is currently active otherwise returns 0. More than one event
+   can be active at any time.
+
+4. Contains the id of the event.
+
+5. Contains the name of DJ (only applicable for 'dj' events).
+
+6-8. Contains the logical playlist name and flags (only for 'playlist' events).
+
+9. Contains the source url of a relay (only for 'relay' events).
+
+10. Contains the calendar date associated with the event (see section 1.2 for the format
+    of the time and date parameters).
+
+
+Example:
+
+Request Parameters:
+
+    op=”listevents”
+    seq="45"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+      <data>
+        <eventlist>
+          <event type="playlist">
+            <active>1</active>
+            <playlist loopatend="0" shuffle="0" priority="5">
+              friday night special
+            </playlist>
+            <calendar starttime="16:00:00" duration="01:00:00" repeat="4"/>
+          </event>
+          <event type="dj">
+            <active>0</active>
+            <dj>nick the stick</dj>
+            <calendar starttime="18:00:00" duration="01:00:00" repeat="4"/>
+          </event>
+        </eventlist>
+      </data>
+    </response>
+
+
+2.14   AddEvent
+---------------
+
+This allows you to add a new scheduled event comparable to editing the calendar xml file.
+
+Parameters:
+
+    op = "addevent"
+    seq = 'any value'
+    type = 'dj' or 'relay' or 'playlist'
+    name = name of the dj or playlist
+    url = url for relay
+    startdate = startdate for schedule (optional)
+    enddate = enddate for schedule (optional)
+    starttime = starttime for schedule (optional)
+    duration = duration for schedule (optional)
+    repeat = repeat value for schedule (optional)
+    loopatend = playlists only. 1 to loop playlist until event is over. Default 0
+    shuffle = playlists only. 1 - shuffle, 0 - no shuffle, inherit - use config file flag
+              Default inherit
+    priority = playlist and relay only number > 0.
+               Used to resolve conflicting playlist or relay events. Default 1
+    archive = djs only. 1 - archive 0 - no archive, inherit - use config file flag
+
+At least one of startdate, enddate, starttime, duration, repeat must appear.
+
+Result:
+
+The returned xml contains the id for the added event (see example).
+
+
+Example:
+
+Request Parameters:
+
+    op=”addevent”
+    seq="45"
+    type="playlist"
+    name="neils cool show"
+    starttime="16:00:00"
+    duration="1:00:00"
+    repeat=4
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+      <data>
+        <id>3</id>
+      </data>
+    </response>
+
+
+2.15   DeleteEvent
+------------------
+
+This operation allows for the removal of an existing scheduled event.
+
+Parameters:
+
+    op = "deleteevent"
+    seq = 'any value'
+    id = id of the event
+
+The 'id' value can be obtained by using 'listevents' (see section 2.13) in the <id> tag.
+Additionally if the event to be deleted is currently active then it will also be
+cancelled.
+
+
+Example:
+
+Request Parameters:
+
+    op=”deleteevent”
+    seq="45"
+    id="12"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+    </response>
+
+
+2.16   AbortEvent
+-----------------
+
+This operation allows you to halt a scheduled event. If the 'id' parameter is provided
+then only that event will be aborted if it is currently running. If no 'id' parameter is
+passed then all active events will be aborted by its usage.
+
+Parameters:
+
+    op = "abortevent"
+    seq = 'any value'
+    id = id for the event (optional)
+
+
+Example:
+
+Request Parameters:
+
+    op=”abortevent”
+    seq="45"
+    id="12"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+    </response>
+
+
+2.17   ListDJS
+--------------
+
+This will return a list of all the DJs on the system and their attributes.
+
+Parameters:
+
+    op = "listdjs"
+    seq = 'any value'
+    name = name of specific dj (optional)
+
+Result:
+
+    1.  <djlist>
+    2.    <dj>
+    3.      <name/>
+    4.      <password/>
+    5.      <priority/>
+    6.      <enabled/>
+    7.      <banned>
+    8.        <year/>
+    9.        <month/>
+    10.       <day/>
+    11.       <hour/>
+    12.       <minute/>
+    13.       <second/>
+    14.     </banned>
+    15.   </dj>
+    16.   <dj> ... </dj>
+    17.   <dj .... </dj>
+    18.   <!-- etc --->
+    19. </djlist>
+
+Line by line explanation:
+
+2. Each DJ is represented by a <dj> tag.
+
+3. Contains the DJ's name.
+
+4. Contains the password for DJ.
+
+5. Contains the priority level for the DJ which is used to prioritise one DJ if more than
+   one DJ is connected at the same time.
+
+6. Contains 1 if enabled (so the DJ can connect) otherwise is 0 if disabled.
+
+7. If a banned tag appears then the DJ has been banned until the date and time indicated
+   by the subtags as shown in lines 8-13.
+
+
+Example:
+
+Request Parameters:
+
+    op=”listdjs”
+    seq="45"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+      <data>
+        <djlist>
+          <dj>
+            <name>Neil</name>
+            <password>foobar</password>
+            <priority>5</level>
+            <enabled>1</enabled>
+          </dj>
+          <dj>
+            <name>Stephen</name>
+            <password>barfoo</password>
+            <level>10</level>
+            <enabled>0</enabled>
+            <banned>
+              <year>2008</year>
+              <month>10</month>
+              <day>14</day>
+              <hour>20</hour>
+              <minute>12</minute>
+              <second>10</second>
+            </banned>
+          </dj>
+        </djlist>
+      </data>
+    </response>
+
+
+2.18   DeleteDJ
+---------------
+
+This will allow you to deletes a DJ from the system. It will also remove any related
+calendar events and kicks off the DJ if they are currently active.
+
+Parameters:
+
+    op = "deletedj"
+    seq = 'any value'
+    name = name of dj
+
+
+Example:
+
+Request Parameters:
+
+    op=”deletedj”
+    seq="45"
+    name="neil"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+    </response>
+
+
+2.19   AddDJ
+------------
+
+This will allow you to add a DJ to the allowed DJ's sc_trans knows about.
+
+Parameters:
+
+    op = "adddj"
+    seq =  any value
+    name = name
+    password = dj password
+    priority = integer priority value
+
+
+Example:
+
+Request Parameters:
+
+    op=”adddj”
+    seq="45"
+    name="neil"
+    password="foobar"
+    priority=5
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+    </response>
+
+
+2.20   ModifyDJ
+---------------
+
+This allows you to change the information relating to a DJ known by sc_trans.
+
+Parameters:
+
+    op = "modifydj"
+    seq = 'any value'
+    name = name
+    password = dj password
+    priority = integer priority value
+
+
+Example:
+
+Request Parameters:
+
+    op=”modifydj”
+    seq="45"
+    name="neil"
+    password="xx45"
+    priority=8
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+    </response>
+
+
+2.21   KickDJ
+-------------
+
+This allows you to kick an active DJ from the list of ones sc_trans knows and can either
+be the current DJ or a named DJ when setting 'name'.
+
+Parameters:
+
+    op = "kickdj"
+    seq = 'any value'
+    duration = amount of time dj is banned (in hh:mm:ss).
+    name = name of dj to kick (optional - default is current dj)
+
+
+Example:
+
+Request Parameters:
+
+    op=”kickdj”
+    seq="45"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+    </response>
+
+
+2.22   UnkickDJ
+---------------
+
+This will allow you to cancel the ban set on a DJ known by sc_trans.
+
+Parameters:
+
+    op = "unkickdj"
+    seq = 'any value'
+    name = name of the dj to unkick
+
+
+Example:
+
+Request Parameters:
+
+    op=”unkickdj”
+    seq="45"
+    name="neil"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+    </response>
+
+
+2.23   NextTrack
+----------------
+
+This will make sc_trans advance to the next track in the current playlist.
+
+Parameters:
+
+    op = "nexttrack"
+    seq = 'any value'
+
+
+Example:
+
+Request Parameters:
+
+    op=”nexttrack”
+    seq="45"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+    </response>
+
+
+2.24   Capture
+--------------
+
+This allows you to activate or deactivate the live capture mode. It will also allow you
+to override the default options for crossfading.
+
+Parameters:
+
+    op = "capture"
+    seq = 'any value'
+    state = "on|off"
+
+
+Example:
+
+Request Parameters:
+
+    op=”capture”
+    seq="45"
+    state="on"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+    </response>
+
+
+2.25   Restart
+--------------
+
+This allows you to restart sc_trans (often useful if a large number of settings have been
+changed or if there's an issue and the <restart> tag was returned by another of the apis.
+
+Parameters:
+
+    op = "restart"
+    seq = 'any value'
+
+
+Example:
+
+Request Parameters:
+
+    op=”restart”
+    seq="45"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+    </response>
+
+
+2.26   Quit
+-----------
+
+This will make sc_trans completely shutdown.
+
+Parameters:
+
+    op = "quit"
+    seq = 'any value'
+
+
+Example:
+
+Request Parameters:
+
+    op=”quit”
+    seq="45"
+
+Resulting XML:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <response seq="45">
+    </response>
+
+
+
+3.0   Notes About Playlist Handling
+-----------------------------------
+
+3.1   Using Playlists
+---------------------
+
+All playlists must first be registered with the system and assigned a symbolic name which
+is the value set using 'playlistfilename' in the configuration file. These registered
+playlists are then used as either the main playlist or as a scheduled program. There is
+no "priority playlist folder" as this is subsumed by scheduling a playlist for "now".
+
+
+3.2   Replacing Playlists
+-------------------------
+
+This has no meaning unless it is relating to the main playlist. If so then you can issue
+a reload by calling the older /loadplaylist method which will then schedule a main
+playlist reload after the next track changes.
+
+
+3.3   Displaying Playlists
+--------------------------
+
+All playlists are displayed as a disk view so when a playlist is being played in shuffle
+mode the pointer into the list will merely jump around. This may appear to be confusing
+but sc_trans knows what the shuffle order is but if this were to be communicated to the
+user then editing would become problematic.
+
+
+3.4   Editing Playlists
+-----------------------
+
+Editing playlists will affect the disk view. Since the user is only ever shown the disk
+view then there will be no ambiguity here. If the playlist is active and is NOT in
+shuffle mode then the files are loaded into the memory view in the appropriate place. If
+the playlist IS in shuffle mode then the new files are shuffled amongst themselves and
+added to the beginning of the memory view.

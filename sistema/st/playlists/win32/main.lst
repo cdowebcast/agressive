@@ -1,0 +1,12 @@
+# This example playlist is used as the main playlist sc_trans will use to pick
+# out the files it will use to create its output for the source we generate.
+#
+# Also remember to use the correct path format for the OS you are using and to
+# ensure that the files you want to play are present in the location you choose
+# e.g.
+.\music\shoutcast.mp3
+#
+# In this example we will just assume that all of the files associated to the
+# playlist are in one folder and all have an mp3 extension though there is no
+# reason why you cannot explicitly specify files to use or to reference a tool.
+# See sc_trans.txt - section 7.1 for more information on how playlists work.

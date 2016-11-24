@@ -1,0 +1,1276 @@
+                   Nullsoft SHOUTcast Transcoder Version 2 (sc_trans)
+                              (Last Updated 07 October 2011)
+
+
+1.0     Introduction
+2.0     Getting Started
+2.1       Running the Transcoder
+2.2       Windows
+2.2.1       Install as a Service
+2.2.2       Uninstall the Service
+2.2.3       Run as a Non-Service in the Console
+2.3       Linux / Mac OS X / BSD
+2.3.1       Run as a Daemon
+2.3.2       End a Daemon
+2.3.3       Run as a Non-Daemon
+2.4       Additional Signals
+2.5       Registering for MP3 Stream Encoding
+2.5.1       Why Does AAC Encoding Not Require a License Key?
+2.6       Supported File Formats
+3.0     Configuration File
+3.1       Administration
+3.2       Calendar Events
+3.3       DJ Support
+3.4       Encoder Options
+3.5       Flash Security
+3.6       Live Capture
+3.7       Logging Options
+3.8       Metadata Control
+3.9       Miscellaneous
+3.10      MP3 Encoding
+3.11      Network Options
+3.12      Playlist Control
+3.13      Replay Gain Control
+3.14      VU Image
+3.15      Debugging
+4.0     Administration Weblet Commands
+4.1       Supported Weblet Commands
+5.0     Metadata Support
+5.1       MP3 Files
+5.2       FLAC and OGG Files
+6.0     Filename Metadata Extraction
+6.1       Filename Metadata Extraction Pattern
+6.2       Filename Metadata Extraction Examples
+6.2.1       Example #1
+6.2.2       Example #2
+6.2.3       Example #3
+6.3       File Metadata Construction For SHOUTcast 1
+7.0     Playlists Support
+7.1       Supported Playlist Formats
+7.2       Remote Applications
+7.3       Additional Information
+8.0     DJing Information
+8.1       Setting Up DJs In The New Scheme
+9.0     Virtual Memory Footprint (Linux)
+10.0    Locale Error (Linux / Mac OS X / BSD)
+11.0    Example Configurations
+11.1      sc_trans_basic
+11.2      sc_trans_capture
+11.3      sc_trans_dj
+11.4      sc_trans_playlist
+11.5      sc_trans_debug
+11.6      sc_trans_simple
+
+
+
+1.0   Introduction
+------------------
+
+The purpose of this document is to show you the different configuration options supported
+by sc_trans along with basic and more advanced example configurations enabling you to get
+started with using sc_trans and the various features it can offer.
+
+
+
+2.0   Getting Started
+---------------------
+
+To get started using sc_trans you need to have some media to play or to have a stream you
+want to relay via sc_trans. With a 'source' you can use then you will need to setup your
+configuration file for the transcoder so it can process the input source and provide an
+output which can be used by the DNAS server (see sc_serv2.txt in the sc_serv distribution
+for more details especially those for stream configurations as non-matching details will
+prevent sc_trans from being able to connect to it).
+
+The following sections will show how to get sc_trans up and running along with details on
+the configuration options it provides for handling different sources and outputs it can
+support.
+
+
+2.1   Running The Transcoder
+----------------------------
+
+The transcoder is able to be run either as a console application or it can be run as
+service (Windows) or daemon (Linux / Mac OS X / BSD). Detailed below is how to get the
+transcoder running on the different operating systems supported by it.
+
+
+2.2   Windows
+-------------
+
+The Windows version of sc_trans is designed to run on fully updated and patched versions
+of Windows 2000, XP, Vista and Windows 7.
+
+Please note that the Windows versions of sc_trans are built with a dependency against the
+Microsoft Visual C++ 2008 SP1 Redistributable Package. If sc_trans is unable to start due
+to a dependency issue then you will need to install the correct version of the package so
+it can run which depends on the version of sc_trans you are attempting to run:
+
+32-bit version:
+http://www.microsoft.com/downloads/en/details.aspx?FamilyID=a5c84275-3b97-4ab7-a40d-3802b2af5fc2
+
+64-bit version:
+http://www.microsoft.com/downloads/en/details.aspx?FamilyID=ba9257ca-337f-4b40-8c14-157cfdffee4e
+
+
+2.2.1   Install as a Service
+----------------------------
+
+sc_trans.exe install <servicename> <username> <password> <conf>
+
+<servicename> - Name of service
+                Note: Typically enter this as 'sc_serv' though you can use a different
+                      name but you will need to remember it as it is required to be the
+                      same when using the 'uninstall' mode.
+
+<username> - User under which to run the service as or '0' for the local system
+
+<password> - Password for user or '0' for the local system or with no password
+
+<conf> - File path to the configuration file
+         Note: If no file / an invalid file is specified then sc_trans will abort loading.
+
+
+Note: When run as a service there is not a good sense of a current working directory so
+      requires all paths in the configuration and playlist files to be fully qualified
+      otherwise lookups will fail when sc_serv is run.
+
+
+To run sc_serv with a configuration file in the same folder as the server as the current
+system user account you would enter into the console:
+
+    sc_trans.exe install sc_trans 0 0 sc_trans.conf
+
+
+2.2.2   Uninstall the Service
+-----------------------------
+
+sc_trans.exe uninstall <servicename>
+
+<servicename> - Name of service as used when the service was registered
+
+
+To uninstall sc_serv assuming it was installed as detailed in the install section above
+then you would enter into the console:
+
+    sc_trans.exe uninstall sc_trans
+
+
+2.2.3   Run as a Non-Service in the Console
+-------------------------------------------
+
+sc_trans.exe <conf>
+
+<conf> - File path to the configuration file (can be relative or absolute)
+         Note: If no file / an invalid file is specified then sc_trans will abort loading.
+
+
+2.3   Linux / Mac OS X / BSD
+----------------------------
+
+Remember to enable the required access on the sc_trans file by doing 'chmod a+x sc_trans'
+after extracting it from the distribution file otherwise the OS is likely to not run it
+and show the error message './sc_trans: Permission denied'.
+
+2.3.1   Run as a Daemon
+-----------------------
+
+./sc_trans daemon <conf>
+
+<conf> - File path to the configuration file (required in all cases)
+         Note: If no file / an invalid file is specified then sc_trans will abort loading.
+
+e.g.
+    ./sc_trans daemon ./sc_trans.conf
+
+When run this should output the following:
+
+'sc_trans going daemon with PID [XXXX]' where XXXX is the <pid> of the process.
+
+
+2.3.2   End a Daemon
+--------------------
+
+kill -SIGTERM <pid>
+or
+kill -15 <pid>
+or
+kill -s TERM <pid>
+
+<pid> - The PID of the daemon instance (reported when the daemon started or can be found
+        with 'ps ax | grep sc_serv' as long as sc_serv was the file run otherwise you can
+        just use 'ps ax' if the filename isn't known). Additionally the PID of sc_trans
+        is listed in the log file.
+
+
+2.3.3   Run as a Non-Daemon
+---------------------------
+
+./sc_trans <conf>
+
+<conf> - File path to the configuration file (can be relative or absolute)
+         Note: If no file / an invalid file is specified then sc_trans will abort loading.
+
+
+2.4   Additional Signals
+------------------------
+
+When run on Linux / Mac OS X / BSD then some additional signals are supported to allow
+for additional control over the running daemon instance of sc_trans.
+
+The following signals can be used with the 'kill' command (in the manner of your choosing
+for using the kill command) along with the <pid> of the daemon instance to do one of the
+following actions:
+
+    SIGKILL   -  Stops sc_trans (also SIGTERM, SIGINT and SIGQUIT will work)
+    SIGHUP    -  Rotates logfile
+    SIGWINCH  -  Skips to next song in playlist
+    SIGUSR1   -  Reload playlist
+    SIGUSR2   -  Toggle playlist shuffle
+
+The result of SIGHUP is that the current log file contents will be moved into <logfile>_1
+e.g. sc_trans_1.log, <logfile>_1 will be moved into <logfile>_2 e.g. sc_trans_2.log and
+so on for all log files which can be found which match the current log file's name. This
+is useful if timed to have it create day specific log files.
+
+
+Note: These signals are not supported by the Windows version of sc_trans which will only
+      respond to the Ctrl + C / Ctrl + Break / console close commands the OS provides.
+
+
+2.5   Registering for MP3 Stream Encoding
+-----------------------------------------
+
+In order for compliance with all broadcasting laws there is a legal requirement for the
+need to purchase an MP3 license key in-order to be able to encode your stream in MP3 (see
+section 3.10 for the related configuration entries). The license key should cost $5.
+
+To obtain the license key you need to go to the following page which will takes you to a
+secure page for purchasing the MP3 encoding license key:
+
+    http://shop.winamp.com/servlet/PromoServlet/promoID.48873700
+
+Once the license key has been obtained (this should be a quick process only taking a few
+minutes when done) then you just need to add the 'name' and 'key' you have obtained into
+the 'unlockkeyname' and 'unlockkeycode' values in your configuration file (see section
+3.10) and to change the 'encoder' type for the stream(s) you require from 'aacp' to
+'mp3' to use it (see section 3.4).
+
+So if your key is '123456' and you have used 'Bob' as the registered name you would add
+the following to your configuration file:
+
+    unlockkeyname=Bob
+    unlockkeycode=123456
+
+
+2.5.1   Why Does AAC Encoding Not Require a License Key?
+--------------------------------------------------------
+
+Encoding to an AAC stream does also require a license like the MP3 encoding though this
+has already been paid for you so there is no need for you to do so yourself when using
+sc_trans. This setup may seem strange but it is just how things happen with the different
+nature of licensing encoding of the AAC and MP3 formats.
+
+
+2.6   Supported File Formats
+----------------------------
+
+As sc_trans does transcoding of audio from one format to another for then being fed to a
+server or another sc_trans instance as a relay, the following file extensions are handled
+as valid input file sources:
+
+    MP3 + MPEG (treated as mp3)
+    WAV (uncompressed)
+    OGG
+    FLAC
+
+
+
+3.0   Configuration File
+------------------------
+
+Here you can find a complete list of all of the configuration options which are provided
+by sc_trans which ranges from logging to networking configuration to control over how the
+media is encoded before transmission to the server.
+
+The entries stored in the configuration file are processed case insensitively.
+
+Configuration entries labelled as <MULTI> can be used to set up specific encoder types or
+for specifying multiple playlists for use with the calendar system. These are specified
+by adding _# to the end of the option's name as shown below where # begins with one. If
+you are only working with a single instance then you do not need to add the _# part as
+any instances of a configuration option will assume it is for _1.
+
+Note: The <MULTI> system is not hierarchical and all values beyond the default must be
+      specified for all connections. So for example, if you wanted to connect to two
+      servers on the same port you must do:
+
+    encoder_1=aacp
+    encoder_2=mp3
+    bitrate_1=32000
+    bitrate_2=32000
+
+Note that you CANNOT do it like this as it leads to not all values being set:
+
+    encoder_1=aacp
+    encoder_2=mp3
+    bitrate=32000
+
+
+The configuration files also allow for notes or options to be disabled by the use of a
+comma (;) at the start of a line which can be seen in all of the configuration examples.
+
+Known options in the configuration files are recognised irrespective of the case they are
+entered in the configuration file so djport and dJpOrT will be handled the same way.
+
+Any items found in the configuration file which are not known (as detailed in following
+sections) or is not processed as a comment will be reported in the following manner:
+
+    <date + time> W msg:[CONFIG] Invalid item on line XX
+
+    where <date + time> is the date and time the event happens at and XX is the line in
+    the configuration file where the error has been found to occur at.
+
+
+3.1   Administration
+--------------------
+
+adminport : Specify the port used to access the administrative control page
+            [Default = 0]
+            If no valid port is specified (i.e. zero) then this feature is disabled.
+adminuser : Specify the username used to access the administrative control page
+            [Default = admin]
+adminpassword : Specify the password to access the administrative control page
+                [Default = goaway]
+
+
+3.2   Calendar Events
+---------------------
+
+calendarfile : Specify the path to the xml based calendar file    [Default = calendar.xml]
+calendarrewrite : Re-write the 'calendar file' on exit    [Default = 1]
+
+Note: See calendarxml.txt for more information on the event format and what it allows you
+      to do with playlist, DJ and relay access.
+
+
+3.3   DJ Support
+----------------
+
+djport : Specify the port to listen on for DJ access using the SHOUTcast 1 protocol
+         [Default = 0 (no listening)]
+         Note: This will actually open 'djport + 1' as the listening port.
+
+djport2 : Specify the port to listen on for DJ access using the SHOUTcast 2 protocol
+          [Default = 0 (no listening)]
+         
+Note: It is possible to use 'djport' and 'djport2' at the same time though you need to
+      ensure that there is no overlap of the ports used in what is specified.
+
+      This is because 'djport2' will open the port specified unlike 'djport' which opens
+      'djport + 1' (as is the way with SHOUTcast 1 connections). Keep this in mind as you
+      would not be able to do the following as it causes a duplication of the port being
+      opened (901 in this case) :
+
+          djport=900    ; i.e. will open port 901
+          djport2=901
+
+      whereas this would work as we are opening two different ports (901 + 902):
+
+          djport=900
+          djport2=902
+
+djcipher : Specify the key used to obfuscate the initial handshaking with the SHOUTcast 2
+           protocol    [Default = foobar]
+           Note: This is a YP2 feature and it matches the 'uvoxcipherkey' value in the
+                 sc_serv configuration file (see sc_serv2.txt - section 4.14).
+
+                 Only change this if you really need to do so as not all SHOUTcast 2
+                 clients will allow you to edit this value from the default value.
+                 If using the Source DSP plug-in then see dsp_sc.txt - section 5.0 for
+                 details on how to change the plug-in to use a differnet value.
+
+autodumpsourcetime : Specify the maximum idle time for the DJ in seconds before being
+                     disconnected    [Default = 30]
+djbroadcasts : Specify the directory in which DJ broadcasts will be recorded into
+               [Default = recorded\ or recorded/ - relative to sc_trans[.exe] ]
+djcapture : Enable to allow the recording of the DJ broadcast    [Default = 1]
+djfilepattern : Specify how the DJ archive filenames will be created in the form of
+                <djname><date time pattern>suffix
+                [Default = _%Y_%m_%d_%H_%M_%S. (year_month_day_hour_minute_second)]
+                Note: The date and time information are formatted using strftime().
+
+
+<MULTI> (one set for each DJ):
+
+djlogin : Specify the username required for the DJ to get access    [Default = dj]
+          Note: When connecting as a SHOUTcast 1 source the password has to be specified
+                as <djlogin>:<djpassword>  e.g.  dj:noise
+
+djpassword : Specify the password required for the DJ to get access    [Default = noise]
+djpriority : Specify the priority for the DJ when multiple DJ's are connected
+             [Default = 1]
+
+
+3.4   Encoder Options
+---------------------
+
+<MULTI> (one set for each encoder):
+
+encoder : Specify the encoder to use, either (mp3 or aacp)    [Default = aacp]
+bitrate : Specify the encoding bitrate in bits per second    [Default = 96000]
+samplerate : Specify the encoding sample rate to use    [Default = 44100]
+channels : Specify the number of channels to encode    [Default = 2]
+mp3quality : Specify the MP3 encoder quality to use when encoding    [Default = 0]
+             Available options are : 0 - fast (preferred), 1 - high quality (changes
+             sample rate and does additional filtering)
+mp3mode : Specify the MP3 encoder mode (CBR / VBR) to use when encoding    [Default = 0]
+          Available options are :
+              0 - CBR
+              1 - VBR High Quality
+              2 - 
+              3 - VBR Medium Quality 
+              4 - 
+              5 - VBR Low Quality]
+
+
+3.5   Flash Security
+--------------------
+
+flashpolicyfile : Specify the name of file which contains the flash crossdomain policies
+                  [Default = crossdomain.xml]
+flashpolicyserverport : Specify the port used for the flash policy server    [Default = 0]
+                        Note: Specify '843' if you want to turn this on.
+
+
+3.6   Live Capture
+------------------
+
+capture : Enable to allow the use of live capture as an input    [Default = 0]
+capturedevice : Specify the OS dependent device used for capture    [Default = <no value>]
+captureinput : Specify the OS dependent input used for capture    [Default = <no value>]
+capturesamplerate : Specify the sample rate used for capture    [Default = 44100]
+capturechannels : Specify the number of channels to capture    [Default = 2]
+
+Note: When run under Windows on an operating system newer than XP there is a possibility
+      for the device name obtained from Windows to be longer than 32 characters. This is
+      a problem as the api's used only support device names upto 31 characters in length
+      so sc_trans will attempt to clip the device name specified with 'capturedevice' to
+      31 characters to try to get a match with the devices the OS is reporting.
+
+      If you are having issues with the live capture then add 'capturedebug=1' to allow
+      you to see the device names reported back to sc_trans by the OS.
+
+
+3.7   Logging Options
+---------------------
+
+log : Enable logging of the transmission output    [Default = 1]
+screenlog :  Enable logging of output to the console    [Default = 1]
+             Note: If log=0 or when running this as a daemon / service then this option
+                   is ignored as it is not applicable.
+logfile : Specify a different logfile to save the transmission logs into
+          [Default = %temp%\sc_trans.log or /tmp/sc_trans.log]
+
+Note: If you are using a folder for saving the logs into then you need to ensure that the
+      folder already exists as sc_serv will not attempt to the create the folder for you.
+
+
+3.8   Metadata Control
+----------------------
+
+streamtitle : Specify the general name for the radio station or stream    [Default - N/A]
+streamurl : Specify the url of the radio station or stream    [Default = http://www.shoutcast.com]
+genre : Specify the genre for the radio station or stream    [Default - Misc]
+
+aim : Specify the AIM contact ID to show for the radio station or stream    [Default - N/A]
+irc : Specify the IRC contact ID to show for the radio station or stream    [Default - N/A]
+icq : Specify the ICQ contact ID to show for the radio station or stream    [Default - N/A]
+
+public : Enable to register the radio station or stream with the YP (shoutcast.com)
+         [Default = 0]
+         Note: If connected to sc_serv then this is used by the 'publicserver' value
+               unless it is being overriden (see sc_serv2.txt - section 4.14).
+
+usemetadata : Enable to use use the in file metadata i.e. stored in file tags
+              [Default = 1]
+metadatapattern : Specify the pattern used for extracting metadata from the filename
+                  [Default = *\%N.* or */%N.*]
+                  Note: See section 6.0 for more details about this)
+displaymetadatapattern : Specify a pattern to use to form the metadata output string for
+                         SHOUTcast 1 metadata    [Default = %R[ - ]%N]
+
+nextlookahead : Specifies the number of tracks ahead of the current track playing to be
+                reported in the stream's metadata to the server    [Default = 3]
+                Note : This is the maximum limit attempted to be reported and will vary
+                       based on the source in use e.g. if there enough entries in the
+                       current playlist being played. Setting to zero will disable this.
+
+
+3.9   Miscellaneous
+-------------------
+
+configrewrite :  Re-write the 'config file' on exit    [Default = 0]
+                 This can accept the following values:
+                   0  -  do not re-write the configuration file
+                   1  -  full save even if the value is the same as the default value
+                   2  -  only save options which are different from the default value
+
+timemultiplier : Used to shift reported time in certain uses    [Default = 1]
+
+inheritconfig: Specify the path of the sc_serv2 configuration file for the instance you
+               want to use the transcoder with    [Default = <no value>]
+
+    Note: The aim of this option is to make it easier to get an instance of sc_trans to
+          run with sc_serv by ensuring that any passwords, etc match up. By using this,
+          option any of the configuration options already set in the sc_trans config file
+          (see below) will be replaced by those found in the sc_serv configuration file.
+
+          The configuration options read from the sc_serv2 configuration file including
+          what they are mapped from in the sc_serv2 value to the sc_trans value are:
+
+              portbase -> serverport
+
+              password -> password  -  Master source password overriden by streampassword
+              streampassword -> password
+
+              uvoxcipherkey -> djcipher (Only change these if you know what it is for)
+
+              srcip -> serverip  -  Will use the ip set unless is empty or srcip=any
+
+              yp2 -> outprotocol  -  Sets outprotocol=1 if with yp2=0 otherwise it sets
+                                     outprotocol=3 as a v2 DNAS is assumed to be used and
+                                     if found to be v1 configuration then outprotocol=1
+
+          Additionally this mode will attempt to read configurations from a v1 DNAS file.
+
+
+include : Specify an additional include file containing settings to be processed from the
+          current point in the main configuration file    [Default = <no value>]
+
+    Note: You can do multiple calls of this allowing for a basic configuration file with
+          then 'specific' encoder configurations set in individual conf files though you
+          need to ensure not to include a reference to the same file in itself.
+
+serverbackupfile : Set the server side file for broken connection playback    [Default = <no value>]
+serverintrofile : Set the server side file that is played when a user connects    [Default = <no value>]
+
+Note: With both of these options, they will override any files specified in the sc_serv's
+      configuration file and also requires 'outprotocol=3' for it to be supported (see
+      section 3.11 for the options 'outprotocol' supports).
+
+      Additionally when connecting to sc_serv via sc_trans, the server intro and backup
+      files as specified in sc_servs configuration file (see sc_serv2.txt - section 4.5)
+      will not be played so you need to specify them in the sc_trans configuration if
+      required for the stream (this is a quirk of how sc_serv currently works).
+
+
+
+3.10   MP3 Encoding
+-------------------
+
+unlockkeyname : Specify the name to use to unlock mp3 encoding (case sensitive)
+unlockkeycode : Specify the code associated with name to unlock mp3 encoding
+
+Note: Due to licensing requirements for MP3 encoding see section 2.5 for how to obtain
+      the key required for unlocking MP3 encoding in sc_trans.
+
+
+3.11   Network Options
+----------------------
+
+<MULTI> (one set for each connection):
+
+endpointname : Specify the name of the endpoint    [Default - <no value>]
+               Note: This is used to identify the encoder such as when using the AJAX api
+                     interfaces and if not specified then sc_trans creates a default name
+                     as 'endpointX' where 'X' is the encoder index starting at one. See
+                     sc_trans_ajax_api.txt for more information on the use of this.
+
+outprotocol : Specify the server protocol to use    [Default = 1]
+              This can be:
+                  1 = SHOUTcast 1 (Legacy)
+                  2 = Ultravox (Ultravox 2.0)
+                  3 = SHOUTcast 2 (Ultravox 2.1)
+
+serverip : Specify the IP address of server to connect to    [Default - <no value>]
+           Note: If 'srcip' has been set to a value other than 'any' in the sc_serv
+                 configuration then you need to set it for you sc_trans configuration
+                 otherwise sc_serv will not see the sc_trans connection attempts (see
+                 sc_serv2.txt - section 4.2).
+                 
+                 Additionally, you will need to make sure that any IP added is valid and
+                 can be fully resolved otherwise the connection to the sc_serv instance
+                 is very likely to fail.
+
+serverport : Specify the server port used to connect to    [Default = 8000]
+             Note: This should relate to the 'portbase' value set in sc_serv's
+                   configuration (see sc_serv2.txt - section 4.8).
+
+password : Specify the password used to connect to a DNAS server    [Default - <no value>]
+           Note: This matches the 'password' value in the sc_serv configuration file (see
+                 sc_serv2.txt - section 4.8) or 'streampassword' (see sc_serv2.txt -
+                 section 4.12 - this only applies for v2 DNAS servers).
+
+streamid : Specify the stream identifier for the SHOUTcast 2 connection    [Default = 1]
+           Note: This relates to the 'streamid' value in the sc_serv configuration (see
+                 sc_serv2.txt - section 4.8).
+
+uvoxuserid : Specify the user ID for accessing SHOUTcast 2    [Default - <no value>]
+             Note: This is currently not used and is provided for future usage.
+
+Note: If 'requirestreamconfigs' is enabled in the sc_serv configuration (see sc_serv2.txt
+      - section 4.12) then you need to ensure that the 'streamid' value used in your
+      sc_trans configuration exists in the sc_serv configuration along with any endpoint,
+      password and other values appropriate to the 'streamid' matched with the equivalent
+      sc_serv configuration values.
+
+uvoxradiometadata : Enable to send the older AOL Radio style metadata to the server    [Default = 0]
+uvoxnewmetadata : Enable to send SHOUTcast 2 style metadata to the server    [Default = 1]
+uvoxmetadatafudgefactor : Specify the delaying factor for Ultravox metadata in seconds    [Default = 0.0]
+shoutcastmetadatafudgefactor : Specify the delaying factor for SHOUTcast metadata in seconds    [Default = 0.0]
+
+
+3.12   Playlist Control
+-----------------------
+
+playlistfile : Specify the name of playlist file to use    [Default = <no value>]
+shuffle : Enable to allow shuffling of the specified playlist    [Default = 1]
+xfade : Specify the number of seconds to do  for a crossfade    [Default = 1]
+        Note: Specify xfade=0 to disable crossfade
+xfadethreshold : Specify the minimum duration in seconds a file must be to allow
+                 crossfading in and out on it    [Default = 10]
+
+
+Priority playlists are those used to override the playing playlist once the current song
+has stopped playing. This can be useful if a sudden playlist / announcement is required.
+
+playlists : Specify the folder used for priority playlists
+            [Default = priority\ or priority/ - relative to sc_trans[.exe]]
+archive : Specify the folder used for archiving playlists
+          [Default = priority\archived\ or priority/archived/ - relative to sc_trans[.exe]]
+
+
+<MULTI> (one set for each additional playlist):
+
+playlistfilename - Used to build named collections of playlists    [Default = <no value>]
+playlistfilepath - Used to build named collections of playlists    [Default = <no value>]
+
+Note: These playlists are used as part of the <playlist> events in calendar.xml where the
+      name set with 'playlistfilename_X' is used in the loading done. See calendarxml.txt
+      and section 3.2 for more information on these events.
+
+
+3.13   Replay Gain Control
+--------------------------
+
+applyreplaygain : Enable to honour the replay gain values stored in the file    [Default = 0]
+defaultreplaygain : If no replay gain is in the file then apply this adjustment    [Default = 0.0]
+djreplaygain : Specify the replay gain to be applied to DJ streams    [Default = 0.0]
+capturereplaygain : Specify the replay gain to apply to the live capture input    [Default = 0.0]
+calculatereplaygain : Enable to calculate the replay gain on the handled files    [Default = 0]
+replaygaintmpdir : Specify the temporary directory for replay gain calculator to work in    [Default = (Windows = %TEMP FOLDER%  Linux = /tmp/)]
+replaygainrunahead : Specify the number of tracks head start to give the replay gain calculator    [Default = 2]
+replaygaindontwrite : Specify if the replay gain values calculated should NOT be written to the file    [Default = 0]
+enhancereplaygain : Specify if the file has replay gain and it is being used, an additional amount of gain to add    [Default = 6.0]
+                    Note: Winamp ships with a default value to add -6dB to file which do
+                          not have replay gain.
+
+
+3.14   VU Image
+---------------
+
+vuimagedirectory : Specify the folder in which to look for vu images to use    [Default = ""]
+                   Note: The image files are named vuimage_XX.<vuimagesuffix> where 'XX'
+                         is from 0 to 100 and the path specified will need to be properly
+                         terminated to work correctly.
+
+vuimagesuffix : Specify the suffix for vu images to be used from the image directory    [Default = png]
+vuimagemimetype : Specify the mime type for vu images to be used    [Default = image/png]
+
+Note: This controls the images available when using the 'vumeterleft' or 'vumeterright'
+      webcommands (see section 4.1). Additionally sc_trans only allows for one active use
+      of each webcommand from the current sc_trans instance with the most current attempt
+      made being the active instance which will be updated.
+
+
+3.15   Debugging
+----------------
+
+In all cases, the default value is for no debug logging for the options listed below.
+
+shuffledebug : Enable debug logging of playlist shuffling
+shoutcastdebug : Enable debug logging of SHOUTcast transmission
+uvoxdebug : Enable debug logging of SHOUTcast 2 transmissions
+gaindebug : Enable debug logging of replay gain on playback
+playlistdebug : Enable debug logging of playlists
+mp3encdebug : Enable debug logging of MP3 encoding
+mp3decdebug : Enable debug logging of MP3 decoder
+resamplerdebug : Enable debug logging of the resampler
+rgcalcdebug : Enable debug logging of the replay gain calculator
+apidebug : Enable debug logging of the AJAX api
+calendardebug : Enable debug logging of the calendar events
+capturedebug : Enable debug logging of live capture
+djdebug : Enable debug logging of DJ management
+flashpolicyserverdebug : Enable debug logging of the flash policy server
+fileconverterdebug : Enable debug logging of the server side file converter
+sourcerelaydebug : Enable debug logging of relayed sources
+sourceandendpointmanagerdebug : Enable debug logging of endpoint management
+
+
+
+4.0   Administration Weblet Commands
+------------------------------------
+
+The transcoder supports web based control of the features it provides allowing for the
+remote control of sc_trans much like the DNAS (sc_serv2) supports. To enable the use of
+the administration interface you need to specify a port and related password and username
+as detailed in the Administration section (see 3.1).
+
+Once enabled then options detailed in the following sections will become available though
+the main interface and controlling aspects are available via the 'api' command with more
+information provided on how to use it in sc_trans_ajax_api.txt.
+
+
+4.1   Supported Weblet Commands
+-------------------------------
+
+The following are the supported commands for the administration weblet the transcoder
+supports and are used in the following manner:
+
+     http://<server_ip>:adminport/<command>
+
+
+quit : Will make sc_trans quit (equivalent of SIGKILL on non-Windows).
+
+rotatelogs : Will rotate the logs (equivalent of SIGHUP).
+             The result of this is that the current log file contents will be moved into
+             <logfile>_1 e.g. sc_trans_1.log, <logfile>_1 will be moved into <logfile>_2
+             e.g. sc_trans_2.log and so on for all log files which can be found which
+             match the current log file's name. This is useful if timed to have it create
+             day specific log files.
+
+nextsong : Will advance to the next song (equivalent of SIGWINCH).
+
+loadplaylist : This will re-load the current playlist (equivalent of SIGUSR1).
+
+toggleshuffle : Use to toggle the current playlist shuffle state (equivalent of SIGUSR2).
+
+kickdj?duration=hh:mm:ss : You can specify an amount of time for how long to kick the
+                           current DJ for. If a duration is not set i.e. just using
+                           'kickdj', then this will defaults to 15 minutes (00:15:00).
+                           If a duration is specified then all three fields of 'hh:mm:ss'
+                           must be specified even if their value is zero (ie 01:30:30).
+
+restart : Restart the current sc_trans instance.
+
+vumeterleft or vumeterright : This will initiate a server side image push that represents
+                              the vu levels as long as there are images are available to
+                              sc_trans to use for this (see section 3.14).
+
+vu.bin : This will return a continuous stream of type 'misc/sc-vu' as long as sc_trans is
+         transcoding. The format of the stream is:
+             0xa5 leftVal rightVal 0xa5 leftVal ..... etc
+
+         If the audio signal is mono there is no right val and you get:
+             0xa5 leftVal 0xa5 leftVal .... etc
+
+writeconfig : This will write out the currently stored configuration and event details to
+              the respective configuration and calendar.xml file. You will need to ensure
+              that you have specified valid files in the configuration options for these
+              files otherwise they won't be saved correctly and any changes may be lost.
+
+crossdomain.xml : This will return the current copy of crossdomain.xml as set with
+                  'flashPolicyFile' (see section 3.5).
+
+timeshift?t=# : [EXPERIMENTAL] This applies a time shift to the audio though the default
+                is to have no shift (i.e. t=0). This should not be used unless you know
+                what it does (added for specific Aol use).
+
+api : This is the point from where you can make use of the AJAX api which sc_trans offers
+      and is used as a POST method. For more information on the parameters and options
+      supported see sc_trans_ajax_api.txt.
+
+
+
+5.0   Metadata Support
+----------------------
+
+As detailed in section 3.8 there are a number of ways to allow for the use of metadata
+from the files being played though there are certain limits to this support for different
+file formats currently supported by sc_trans as detailed in the following sections.
+
+
+5.1   MP3 Files
+---------------
+
+There is support for ID3v1 and ID3v2 tags. With ID3v2 there is support of version 3 and 4
+of the specification though there are the following limitations:
+
+    a) Unsynch data is not supported
+    b) Compressed frames are not supported
+    c) Encrypted frames are not supported
+    d) Appended v4 frames are not supported
+
+
+5.2   FLAC and OGG Files
+------------------------
+
+There is support of the native metadata (Vorbis comment tags). Metadata read from these
+files are mapped to expected values which SHOUTcast expects to get. For more information
+see sc2_xml_metadata.txt for details on the various field mappings applied.
+
+
+
+6.0   Filename Metadata Extraction
+----------------------------------
+
+The transcoder along with being able to make use of the metadata from files is also able
+to attempt to extract metadata from the filepath of the files by use of a template.
+
+Guessing of the metadata from the filename will happen if 'usemetadata=0' is set in your
+configuration file (default behaviour is to use the file tag) or if no tag is detected in
+the file. For the best experience it is always best to ensure any files you use have tags
+and the required metadata in them.
+
+
+6.1   Filename Metadata Extraction Pattern
+------------------------------------------
+
+The 'metadataPattern' setting is used to specify the pattern used to extract metadata
+from a filename if there is no detected metadata or 'usemetadata=0'.
+
+The default pattern used is *\%N.* (Windows) and */%N.* (all other OSes). The following
+are the formatting options which are supported in the pattern:
+
+    %N = Song name
+    %G = Genre
+    %A = Album
+    %R = Artist
+    %Y = Four digit year
+    %# = Sequence of digits
+    %% = % character
+    [] = Brackets optional elements (no nesting)
+    *  = String
+    Other characters are matched exactly as found.
+
+The pattern matching is done working from the right to the left.
+
+
+6.2   Filename Metadata Extraction Examples
+-------------------------------------------
+
+The following examples show the metadata pattern matching working.
+
+
+6.2.1   Example #1
+------------------
+
+metadataPattern = */%R/%Y%A/Audio/[%#_]%N.*
+filepath = /home/songs/Mask and Wig/1969 Irreverance Of Things Past/Audio/03_The Royal Blues.mp3
+
+Extracted metadata result:
+
+    ALBUM = Irreverance Of Things Past
+    ARTIST = Mask and Wig
+    SONG = The Royal Blues
+    YEAR = 1969
+
+
+6.2.2   Example #2
+------------------
+
+metadatapattern = */%A/[%R_]%N
+filepath = /home/album/song
+
+Extracted metadata result:
+
+    ALBUM = album
+    SONG = song
+
+
+6.2.3   Example #3
+------------------
+
+metadatapattern = */%A/%R_%N
+filepath = /home/album/artist_song
+
+Extracted metadata result:
+
+    ALBUM = album
+    ARTIST = artist
+    SONG = song
+
+
+6.3   File Metadata Construction For SHOUTcast 1
+-------------------------------------------------
+
+You can specify how metadata elements are concatenated together to from the SHOUTcast 1
+metadata string by specifying the 'displaymetadatapattern' option.
+
+In a standard Winamp client install then it will expect the data in the equivalent format
+of '%R[ - ]%A[ - ]%N' and uses that format to parse the data. If you deviate from this or
+if the user has changed settings in their Winamp client then the results may not display
+properly with what is expected to be shown.
+
+The following token substitutions are made with 'displaymetadatapattern':
+
+    %N = Song name
+    %A = Album name
+    %R = Artist
+    %G = Song genre
+    %Y = song year
+    %t = Station name (a.k.a. stream title a.k.a. icy-name)
+    %u = Station url (a.k.a. icy-url)
+    %g = Station genre (a.k.a. icy-genre)
+
+Characters in brackets are only displayed if the token substitution to the left of them
+did not result in the insertion of an empty string.
+
+
+
+7.0   Playlists Support
+-----------------------
+
+The transcoder supports a playlist file to specify the file(s) to use when it is working
+and is a file with the .lst extension with one file per line. The file may be encoded in
+UTF-8 to allow for the support of non-english filenames, etc.
+
+Lines in the playlist beginning with a # will be ignored which allows you to disable a
+specific file or script in the playlist or comments on what is done.
+
+The playlist file will be processed until the end of the file is reached or until the
+parser comes across a line containing ###!EOF is detected.
+
+With versions of sc_trans prior to those from the end of 2010 there was a need to have a
+line break after the last entry in the playlist for them to be correctly recognised. This
+is no longer a requirement of the playlist format.
+
+Wildcards are supported in the processing of the folder contents though this will not do
+a recursion of any sub-folders within the specified folder
+e.g.
+    c:\music\*.mp3
+
+This will only find mp3 files in the 'music' folder and will not look in any sub-folders
+which may be inside the 'music' folder. For sub-folders to be included then you will need
+to explicitly specify the sub-folder for it to be recognised by the playlist loader.
+
+Additionally these entries can be intermixed with regular explicit entries
+e.g.
+    c:\music\foo.mp3
+    c:\music\otherstuff\*.mp3
+    c:\music\bar.mp3
+
+Any entries which relate to file formats not supported (determined by the file extension)
+will be ignored from the playlist stored e.g. test.aac would not be used if read.
+
+
+7.1   Supported Playlist Formats
+--------------------------------
+
+The transcoder supports the following playlist file formats though is limited to use only
+the filepaths from the playlist formats which also provide additional title / metadata
+information in them:
+
+    Plain text file - this is the equivalent of a commentless M3U / M3U8 file
+    PLS
+    M3U
+    M3U8 (UTF-8 encoded version of the M3U format)
+
+If a loaded playlist contains any entries with wildcards in them then the playlist loader
+will only attempt to find the matching files in the base folder specified and will not
+recurse into any sub-folders found. This is different to how Winamp for example (and any
+other programs) handles the loading of such entries where it would then recurse through
+any sub-folders found. This behaviour may change at a future time but is not guaranteed.
+
+
+7.2   Remote Applications
+-------------------------
+
+An additional feature of the transcoders playlist support is the ability to run remote
+applications in place of a fixed playlist line. This is done by starting a line with #!
+e.g.
+    /music/foo.mp3
+    #!/bin/perl /home/user/songfromDB.pl
+    /music/bar.mp3
+
+The script run in this case should return the entry in the playlist to run at this point.
+The script is also passed an integer parameter indicating how many tracks ahead must also
+be returned by the script.
+
+By returning these extra tracks as well as the first one expected then this information
+will be used by YP2 to refine searching and also to establish a "coming soon" track which
+will be shown to clients or on the SHOUTcast site.
+
+So with this style of playlist handling, it is possible to have an external app running
+which will provide all of the files for sc_trans to process which could be of use if you
+have a specific requirement for when and how files are played.
+
+Additionally you can pair remote application actions together in such a manner:
+
+    #!php call track script
+    #!php call commercial script
+
+where this will alternate between the first and second scripts returning the file to be
+processed through sc_trans.
+
+
+7.3   Additional Information
+----------------------------
+
+Every entry in the playlist is run through a wildcard expander specific to the operating
+system the transcoder is being run on. Under *nix systems then glob() is used and for
+Windows systems FindFirstFile() is used to handle the wildcard.
+
+There are a number of scenarios to be considered for remote application entries in a
+playlist as detailed in the following list:
+
+    1) The standard out from the command is used as the name of the file to open.
+
+    2) If the standard out is empty then the entry will be skipped.
+
+    3) If the command returns an error code (non zero) then the entire playlist of which
+       the entry is a member off will be considered to be finished.
+
+    4) The data written to standard out should be encoded in the UTF-8 format and if
+       returning multiple entries needs to be separated by a newline character.
+
+    5) If only a single track name is returned by the remote application then the
+       following values in the playlist will be used for "coming soon" calculations.
+
+    6) If you return the requested number of additional tracks (passed in when it is run)
+       then these will be used for "coming soon" calculations.
+
+    7) If there are [ or ] in the filepath then for them to appear instead of being used
+       as a filter, you will need to escape them normally as \[ and \] else it is often
+       likely that the files will fail to load. This is more of an issue on non-Windows
+       versions due to how the shell and expansion works.
+
+
+
+8.0   DJing Information
+-----------------------
+
+The DJ port (configuration option 'djport' or 'djport2') mimics the behaviour of sc_serv
+by allowing someone running another copy of sc_trans (or the Winamp DSP plug-in) to
+connect to your sc_trans and then to broadcast through it which effectively turns your
+sc_trans into a relay.
+
+The 'djport' or 'djport2' value (see section 3.3 for more details setting this up) is the
+IP port you choose to have your sc_trans to listen on for an inbound DJ connection (by
+default this feature is not enabled).
+
+A simple example of this feature is if you have a friend who wants to do a show on your
+station. At the appropriate time they would start their own instance of sc_trans which
+will then connect to your instance as if it was a server. When the connection happens
+then your sc_trans instance will stop the current playlist playback and will crossfade
+into your friends show. Then when the show is over and the friend disconnects then your
+instance of sc_trans will crossfade back into the playlist from the point when the friend
+had connected.
+
+The DJ broadcast will also be copied to disk for later playback assuming that 'djcapture'
+has not been changed from the default settings though you can turn this feature off if
+required. See section 3.3 for more available options.
+
+
+8.1   Setting Up DJs In The New Scheme
+--------------------------------------
+
+DJ accounts are set up by using the 'djlogin', 'djpassword' and 'djpriority' options as
+shown in <MULTI> options under section 3.3.
+
+If we have two DJs who we want to allow access into our system then we would have the
+following in our main configuration file (obviously in real use change the names and
+passwords to what you need):
+
+    djlogin_1=peter
+    djpassword_1=foobar
+    djpriority_1=4
+
+    djlogin_2=paul
+    djpassword_2=goaway 
+    djpriority_2=2
+
+The priority value is used if the scheduling allows for two different DJs to connect into
+the instance of sc_trans at the same time. If this did happen then the DJ with the higher
+priority will take precedence on the access made.
+
+
+Now that we have setup the DJs in our main configuration, we will need to setup access
+for them via the calendar.xml file scheduler (see calendarxml.txt). In this example Peter
+is allowed access to sc_trans at any time whereas Paul is only allowed a connection to
+sc_trans on Tuesdays at 2am for an hour. Finally the shows Peter makes will not be saved
+whilst Paul's ones will be archived.
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <eventlist>
+      <event type="dj">
+        <dj archive="0">peter</dj>
+        <calendar/>
+      </event>
+      <event type="dj">
+        <dj archive="1">paul</dj>
+        <calendar starttime="02:00:00" duration="01:00:00" repeat="4"/>
+      </event>
+    </eventlist>
+
+
+Now everything is setup, all that is needed is to run sc_trans and for Peter and Paul to
+setup their setups (either via another sc_trans or Winamp + Source DSP for example) with
+the required login details and then they will be able to connect as set in the schedule.
+
+Note: When connecting as a SHOUTcast 1 source, the DJ must specify the login password in
+      the form of <djlogin>:<djpassword>  e.g.  paul:goaway   If not done correctly then
+      the DJ will not be able to connect. Section 3.3 provides more information on the
+      configuration values required.
+
+
+
+9.0   Virtual Memory Footprint (Linux / Mac OS X / BSD)
+-------------------------------------------------------
+
+Due to how sc_trans works it will create a large number of threads which may become an
+issue due to the default virtual memory stack allocation per thread potentially being
+large (typically 10MB per thread). For most people this should not be an issue as the
+memory is not really allocated unless it is used. If however if you have a resource
+constrained system or if you plan on running many copies of sc_trans then you could
+potentially run out of virtual memory.
+
+The default thread allocation can be reduced by issuing a "ulimit" command before running
+sc_trans and in the example reduces it to 512KB per-thread
+e.g.
+    ulimit -s 512
+
+
+
+10.0   Locale Error (Linux / Mac OS X / BSD)
+--------------------------------------------
+
+If you receive the following error then you have a locale related issues:
+
+    terminate called after throwing an instance of 'std::runtime_error'
+    what():  locale::facet::_S_create_c_locale name not valid
+    Abort trap
+
+If this happens then you need to set the 'POSIX' locale in your terminal's environment
+values. If this does not happen then everything is fine or you are using a newer version
+of sc_trans from the end of 2010 which should no longer exhibit this issue.
+
+Linux:
+    export LC_ALL=POSIX
+
+BSD:
+    setenv LC_ALL POSIX
+
+Mac OS X:
+    export LC_ALL=POSIX
+
+You can test to see if this has worked by checking the shell command "locale":
+
+    LANG=
+    LC_COLLATE="POSIX"
+    LC_CTYPE="POSIX"
+    LC_MESSAGES="POSIX"
+    LC_MONETARY="POSIX"
+    LC_NUMERIC="POSIX"
+    LC_TIME="POSIX"
+    LC_ALL="POSIX"
+
+
+
+11.0   Example Configurations
+-----------------------------
+
+Include as part of the sc_serv installation are a number of example configurations to get
+things started with using some of the features of the transcoder. The provided examples are:
+
+    sc_trans_basic.conf
+    sc_trans_capture.conf
+    sc_trans_dj.conf
+    sc_trans_playlist.conf
+    sc_trans_simple.conf
+
+All of the configuration examples are documented and will relate back to details in this
+file as appropriate. You will need to change some details in these example files or to
+obtain any applicable license keys for the setup you are making (see section 2.5).
+
+In all cases the examples are designed to work from the same install folder as sc_trans.
+
+
+Remember these examples are a way to get you up and running faster though you are still
+likely to have to adjust things depending upon the systems you are using and how you want
+to manage your sources and server connections which are covered in previous sections.
+
+Additionally if you are not happy with editing the files or find it still too confusing
+then you can use the configuration builder which (if installed) can be found in the
+'config_builder'. Open 'config_builder.html' in your browser and then use this graphical
+tool to setup a configuration file for the transcoder (and additionally the server).
+
+
+11.1   sc_trans_basic
+---------------------
+
+This is the base configuration from which the other configuration examples are based and
+this will get a sc_trans instance running and making a connection to a local instance of
+sc_serv (see sc_serv2.txt - section 9.1 about the sc_serv_basic configuration file).
+
+
+11.2   sc_trans_capture
+-----------------------
+
+This configuration file changes the required options in the sc_trans_basic configuration
+to get a sc_trans instance running as a capture device e.g. from a microphone. This shows
+the use of the 'include' option (see section 3.9).
+
+
+11.3   sc_trans_dj
+------------------
+
+This configuration file changes the required options in the sc_trans_basic configuration
+to get a sc_trans instance running with the ability to accept DJ connections using both a
+SHOUTcast 2 source and a legacy SHOUTcast 1 source in addition to how calendar.xml files
+are used to control DJ access.
+
+
+11.4   sc_trans_playlist
+------------------------
+
+This configuration file changes the required options in the sc_trans_basic configuration
+to get a sc_trans instance running with the ability to schedule a jingle to play around
+20 minutes and 40 minutes past the hour as well as to schedule a different playlists to
+be played in the evening and also on the weekend.
+
+This example shows of some of the features of the event system and how it is possible to
+automate playlist changes.
+
+
+11.5   sc_trans_debug
+---------------------
+
+This configuration file can be included in any other configuration files to allow you to
+get debug logging output when trying to investigate any issues you may be experiencing.
+
+
+11.6   sc_trans_simple
+----------------------
+
+Note: Use this if you just need to get a very basic transcoder running or are impatient
+      or are struggling to get it running despite the previous example configurations.
+
+This configuration file is designed to be used just as is and is the simplest form of the
+configuration file you can have which will allow you to get a running transcoder to work
+with an instance of the server on the same machine.
+
+This works by assuming default settings of the transcoder and that the server has been
+properly configured to work as this configuration uses the 'inheritconfig' option to get
+some of the passwords and other configuration details directly needed for the transcoder
+to work with the server instance by using sc_serv_simple.conf (see sc_serv2.txt - section
+9.5) or change this to reference a known server configuration you want to use this with.
+
+All you need to do when using this configuration file is to:
+
+1) Edit the playlist file to be used (as referenced in the playlistfile entry)
+2) Setup the required encoder options including entering the MP3 unlock code by filling
+   in 'unlockkeyname' and 'unlockkeycode' entries if using MP3 decoding (section 2.5 has
+   details on why this is required and how to obtain the unlock key and code)
+3) Change the stream information details as appropriate

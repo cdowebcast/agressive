@@ -1,0 +1,83 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          sc_serv
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: startscript sc_serv
+# Description:       startscript for sc_serv (DNASv2)
+#										Put in /etc/init.d/shoutcast with chmod 755
+### END INIT INFO
+
+# Author: Lucas Saliés Brum <lucas@archlinux.com.br>
+
+# Shoutcast Vars
+NAME="shoutcast"
+USER="radio"
+HOMEDIR="/home/${USER}"
+SHOUT_HOME="${HOMEDIR}/sc"
+SHOUT_PID=$(pidof sc_serv)
+DESC="Shoutcast Stream"
+SCRIPTNAME="/etc/init.d/$NAME"
+
+# Arquivo de configuração separado?
+CONFIG="${HOMEDIR}/config.cfg"
+
+# Diretórios não pesquisados durante a criação da lista
+EXCLUDE="Vinhetas|Amado Batista|Barrerito"
+
+# sc_trans Vars
+TRANS_HOME="${HOMEDIR}/st"
+TRANS_PID=$(pidof sc_trans)
+TRANS_FIND=$(which find)
+TRANS_CHOWN=$(which chown)
+TRANS_PATH="/usr/local/musicas" # Lembre-se de dar um chown -R $USER:$USER
+TRANS_VINHETAS_PATH="/usr/local/musicas/Vinhetas"
+TRANS_LIST="${TRANS_HOME}/playlists/principal.lst"
+TRANS_VINHETAS_LIST="${TRANS_HOME}/playlists/jingles.lst"
+
+# Carrega configurações do arquivo config.cfg, se ele existir...
+if [ -f $CONFIG ]; then
+	. $CONFIG
+fi
+
+do_start()
+{
+    su $USER -c "cd $SHOUT_HOME; ./sc_serv ./sc_serv_sr.conf 2> /dev/null 1> /dev/null &"
+		su $USER -c "cd $TRANS_HOME; ./sc_trans ./sc_trans_sr.conf 2> /dev/null 1> /dev/null &"
+}
+
+do_stop()
+{
+    pkill -9 sc_serv
+    pkill -9 sc_trans
+}
+
+do_refresh()
+{
+	pkill -SIGUSR1 sc_trans
+}
+
+case "$1" in
+start)
+        echo "Starting $DESC $NAME"
+        do_start
+;;
+stop)
+        echo "Stopping $DESC $NAME"
+        do_stop
+;;
+refresh)
+        echo "Refreshing $DESC $NAME"
+        do_refresh
+;;
+restart)
+        echo "Stopping $DESC $NAME"
+        do_stop
+        echo "Starting $DESC $NAME"
+        do_start
+;;
+*)
+        echo "Usage: $SCRIPTNAME {start|stop|refresh|restart}"
+esac

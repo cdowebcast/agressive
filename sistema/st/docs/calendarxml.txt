@@ -1,0 +1,272 @@
+                    Nullsoft SHOUTcast Transcoder Version 2 (sc_trans)
+                          Calendar Event XML File Specification
+                               (Last Updated 07 July 2011)
+
+
+1.0    Introduction
+2.0    File Layout
+2.1      Calendar Tag
+2.1.1      Time Periodic Events
+3.0    Supported Events
+3.1      DJ Events
+3.2      Playlist Events
+3.3      Relay Events
+
+
+
+1.0   Introduction
+------------------
+
+The purpose of the calendar.xml file is to allow for the scheduling of events in your
+sc_trans instance such as for specifying a time when a DJ is able to join or when a
+specific playlist will be used.
+
+An important thing to note is that sc_trans will only read the settings from your
+calendar xml file when it is loaded. So if you do change anything in the file externally
+whilst sc_trans is running then you will need to restart your sc_trans instance for the
+new values to be read in.
+
+If you use the AJAX api (see sc_trans_ajax_api.txt and Sections 2.14 to 2.16) then you
+can make changes to the calendar file whilst sc_trans is running but you will need to
+make sure to have 'calendarrewrite=1' in your sc_trans configuration file so that any
+live changes made will be saved back into your calender file.
+
+
+
+2.0   File Layout
+-----------------
+
+The following xml file shows the general layout of a calendar.xml file and the options
+which are available for it for a single entry. The file does allow you to specify more
+than one event by adding in more <event>...</event> blocks.
+
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<eventlist>
+  <event type="playlist|dj|relay">
+    <!------ control when, how long, how many times the event applies -------->
+    <calendar startdate="yyyy/mm/dd" enddate="yyyy/mm/dd"
+              starttime="hh:mm:ss" duration="hh:mm:ss" repeat="#"/>
+
+    <!----------  playlist type  ---------->
+    <playlist loopatend="1|0" shuffle="1|0|inherit" priority="#">
+      playlistname
+    </playlist>
+    <!------------------------------------->
+
+    <!-------------  dj type  ------------->
+    <dj archive="1|0|inherit">djname</dj>
+    <!------------------------------------->
+
+    <!-----------  relay type  ------------>
+    <relay url="" priority="#"/>
+    <!------------------------------------->
+
+  </event>
+</eventlist>
+
+
+2.1   Calendar Tag
+------------------
+
+The <calendar> tag contains date information about scheduled events and it can contain
+the following attributes allowing for finer control over the event:
+
+    startdate    (specified as yyyy/mm/dd)
+    enddate      (specified as yyyy/mm/dd)
+    starttime    (specified as hh:mm:ss - 24 hour format)
+    duration     (specified as hh:mm:ss - 24 hour format)
+    timeoffset   (specified as hh:mm:ss - 24 hour format)
+    repeat       (numeric value)
+
+
+The 'startdate' and 'enddate' attributes indicate the date range the event is valid for
+otherwise the event will be ignored. Either value can be left out and if so then the
+event will be unbounded in that direction i.e. specifying no 'startdate' is the way to
+indicate the event takes effect when sc_trans starts.
+
+
+The 'starttime' and 'endtime' attributes work in a similar manner to the date ones for
+the event but are used when the associated 'startdate' is met. So if no 'starttime' is
+indicated then the event starts immediately on 'startdate'. So as you can see this could
+be left out along with 'startdate' to make events start always when sc_trans is started.
+
+
+The 'duration' attribute is the length of the scheduled event and if this is not
+specified then the event will end when 'enddate' (if specified) is reached.
+
+
+The 'repeat' attribute is a numeric code for an event which gives control over how an
+event will be repeated. The repeat attribute can be one of the following as listed below
+or a combination to create more complicated repeat patterns e.g. '62' will make an event
+repeat every day of the week (i.e. 2 + 4 + 8 + 16 + 32)
+
+    1 - Every Sunday
+    2 - Every Monday
+    4 - Every Tuesday
+    8 - Every Wednesday
+    16 - Every Thursday
+    32 - Every Friday
+    64 - Every Saturday
+    128 - Time periodic
+
+
+2.1.1   Time Periodic Events
+----------------------------
+
+Time periodic events are those which occur at regular intervals and are defined by the
+'starttime', 'timeoffset' and 'repeat' attributes allowing for control over the time
+interval between the event and the next instance of the event.
+
+The 'starttime' attribute is used to indicate the interval between this type of event and
+the next time it will occur. So with a number of these events you can have a jingle play
+at a specific time during the day at a consistent time.
+
+The 'timeoffset' atribute is used to indicate an offset from midnight at which the
+periodic event will be applied relative to the 'starttime' value. This will allow you to
+specify a specific time during the interval so if you wanted to have an event which is
+activated every hour but on the half hour you could do:
+
+    timeoffset="00:30:00"
+    starttime="01:00:00"
+
+
+If no other repeat field values are specified i.e. repeat isn't 128 then the event will
+be valid for every day of the week. If other values are specified then the event will be
+restricted to those days specified
+e.g.
+    repeat=190    repeats the event only during weekdays
+
+
+Important Note: If you use this on a playlist event then the event will be activated at
+                the specified time period after the last event successfully occurred but
+                the required file(s) will not be played until the currently playing file
+                has completed playing as playlist events add to the main playback queue
+                and do not act as an instant event as the relay and DJ events do.
+
+
+3.0   Supported Events
+----------------------
+
+As shown in the previous section, there are 3 types of events supported by the file
+format which are:
+
+    DJ
+    Playlist
+    Relay
+
+
+The following sections will detail the options available with each event type.
+
+
+3.1   DJ Events
+---------------
+
+The purpose of a DJ event is to control the access a DJ has to the instance of sc_trans
+for the duration of the specified event. This makes it simple to setup scheduling of
+access of different DJs at different times of the day or week.
+
+This is enabled in combination with the settings in the sc_trans configuration file for
+controlling DJ access. So for this to work you will also need to make sure you enable
+'djport / djport2' (depending on you using SHOUTcast 1 or SHOUTcast 2 features) and to
+set any passwords and names in the sc_trans config file to match the event. See
+sc_trans.txt - section 3.0.3 for more information setting up DJ support.
+
+
+The parameters supported for this event type are:
+
+archive : Specify if the DJ show will be archived (sc_trans does this normally)
+          1 - Yes
+          0 - No
+          inherit - Use value set for 'djcapture' in the configuration file.
+
+
+e.g. This would enable archiving of the show made by the DJ identified as 'Bob'
+
+    <dj archive="1">Bob</dj>
+
+
+3.2   Playlist Events
+---------------------
+
+This allows you to schedule playlists to be used at the specified time or date thus
+making it easier to change to a weekend or an evening playlist if needed.
+
+The playlists are those defined by the playlistfilename and playlistfilepath entries in
+you sc_trans configuration file which allows for multiple playlists to be accessed by
+this event type.
+
+The event uses the symbolic name of the playlist (set with playlistfilename_X i.e. the
+name you've given to the playlist, not the actual playlist filename).
+
+So if you had 3 playlists and wanted to use the second one then you would set things up
+as follows (playlistfilepath  also needs to be set but is not shown):
+
+In the sc_trans configuration file:
+    playlistfilename_1=morning
+    playlistfilename_2=daytime
+    playlistfilename_3=evening
+
+In the calendar xml file:
+   <playlist loopatend="1" shuffle="inherit" priority="1">daytime</playlist>
+
+
+The parameters supported for this event type are:
+
+loopatend : Specify if the playlist will restart if the end of the playlist is reached
+before the duration of the event is completely fulfilled.
+            1 - Yes
+            0 - No (Default)
+
+shuffle : Specify if the playlist should be shuffled when being played.
+          1 - Yes
+          0 - No
+          inherit - Use value set for 'shuffle' in the configuration file.
+
+priority : Specify the priority of the playlist when a playlist event overlaps with that
+           of another playlist event. The result in this case is that the playlist event
+           with the highest priority will become active.
+
+           Note: Supported priority values are 1 (default) and higher.
+
+
+e.g. This would specify the playlist known as 'evening' to loop if needed and to not be
+     shuffled when played
+
+    <playlist loopatend="1" shuffle="0" priority="1">evening</playlist>
+
+
+Important Note: Playlist events are queued up instead of being activated immediately so
+                if you have a 'jingle' playlist then this would not be played until the
+                currently playing file has completed playing and has not been pushed down
+                the queue by a higher priority playlist event. This is something you need
+                to take into account if you want to have a jingle play every 10 minutes
+                but none of the files have a roughly standard duration.
+
+
+3.3   Relay Events
+------------------
+
+This allows you to make use of the relaying support within sc_trans and so when used in
+the event system will allow you to control when a relay is allowed to connect to you
+sc_trans instance (much like the DJ support mentioned earlier).
+
+
+The parameters supported for this event type are:
+
+url : Specify the url of the source to be relayed.
+
+priority : Specify the priority of the source when a relay event overlaps with that of
+           another relay event. The result in this case is that the relay event with the
+           highest priority will become active.
+
+           Note: Supported priority values are 1 (default) and higher.
+
+
+e.g. This would enable the relaying of the stream on 'my_site' on port 9000
+
+    <relay url="http://my_site:9000" priority="1"/>
+
+Note: It may be necessary to append /; onto the end of the url as in some cases the wrong
+      mime type will be returned from the server and so causes the relay url fail to be
+      recognised by sc_trans. This depends on the server.

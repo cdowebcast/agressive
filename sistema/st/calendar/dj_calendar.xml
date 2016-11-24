@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<eventlist>
+
+  <event type="dj">
+    <dj archive="1">dj1</dj>
+    <calendar />
+  </event>
+
+  <event type="dj">
+    <dj archive="1">dj2</dj>
+    <calendar />
+  </event>
+
+
+</eventlist>
