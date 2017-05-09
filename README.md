@@ -1,4 +1,7 @@
-# agreSSive
+# agreSSive  
+
+[![Build Status](https://travis-ci.org/sistematico/agressive.svg?branch=master)](https://travis-ci.org/sistematico/agressive)  
+
 Um sistema de pedidos para o Shoutcast
 
 ## Pŕe-requisitos
