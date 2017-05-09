@@ -1,15 +1,15 @@
 ---
 layout: page
-title: About
-permalink: /about/
+title: Sobre
+permalink: /sobre/
 ---
 
-Some information about you!
+Algumas informações sobre o agreSSive
 
-### More Information
+### Mais Informações
 
-A place to include any other types of information that you'd like to include about yourself.
+Em breve...
 
-### Contact me
+### Entre em contato com o autor
 
-[email@domain.com](mailto:email@domain.com)
+[lucas@archlinux.com.br](mailto:lucas@archlinux.com.br)
