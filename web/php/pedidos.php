@@ -1,6 +1,15 @@
 <?php
 
-  include '../conf/config.php';
+//if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest')
+//{
+
+//exit;
+
+//}
+
+//continue;
+
+  include 'conf/config.php';
 
 	if ($_SERVER['REQUEST_METHOD'] == "GET" && isset($_GET['musica']) && $_GET['musica'] != "") {
 		$musica = urldecode($_GET['musica']) . "\n";
