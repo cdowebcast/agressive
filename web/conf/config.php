@@ -1,4 +1,15 @@
 <?php
+
+//if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest')
+//{
+
+//exit;
+
+//}
+
+//continue;
+
+
 // Caminho das músicas
 $musicas = '/usr/local/musicas';
 
@@ -24,4 +35,8 @@ $acentos = array(
     'ú'=>'u', 'û'=>'u', 'ü'=>'u', 'ý'=>'y', 'ý'=>'y', 'þ'=>'b', 'ÿ'=>'y', 'ƒ'=>'f', '&'=>'e',
     'ă'=>'a', 'î'=>'i', 'â'=>'a', 'ș'=>'s', 'ț'=>'t', 'Ă'=>'A', 'Î'=>'I', 'Â'=>'A', 'Ș'=>'S',
 );
+
+$db = new PDO("sqlite:../db/agressive.sqlite") or die("Impossivel criar BD");
+$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
 ?>
