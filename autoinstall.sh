@@ -42,7 +42,7 @@ usuario=$(echo -n $limpo | tr A-Z a-z)
 if [ -d $(eval echo "~${usuario}") ]; then
   echo "Este usuário ou a paste dele já existe, deseja sobre-escrever?"
 
-  while true; do
+  # while true; do
       read -p "Este usuário ou a paste dele já existe, deseja sobre-escrever? [s/n] " yn
       case $yn in
           #[Ss]* ) make install; break;;
@@ -50,7 +50,7 @@ if [ -d $(eval echo "~${usuario}") ]; then
           [Nn]* ) echo "Abortando a execução do agreSSive..." && exit 1;;
           *) echo "Por favor, responda sim ou não.";;
       esac
-  done
+  #done
 else
   read -sp "Senha do usuário e do agreSSive?" senha_raw
   senha=$(perl -e 'print crypt($ARGV[0], "senha_raw")' $senha_raw)
@@ -67,7 +67,7 @@ echo "Caminho: ${caminho}"
 echo "---------------------------------------------"
 echo
 
-while true; do
+#while true; do
     read -p "Deseja continuar? [s/n] " yn
     case $yn in
         #[Ss]* ) make install; break;;
@@ -75,6 +75,6 @@ while true; do
         [Nn]* ) echo "Abortando a execução do agreSSive..." && exit 1;;
         *) echo "Por favor, responda sim ou não.";;
     esac
-done
+#done
 
 #useradd -m -p encryptedPassword username
