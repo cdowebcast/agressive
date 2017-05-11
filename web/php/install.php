@@ -2,14 +2,17 @@
 
 include '../conf/config.php';
 
-$db = new PDO("sqlite:../db/agressive.sqlite") or die("Impossivel criar BD");
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
 $stmt_drop = $db->prepare('DROP TABLE IF EXISTS musicas;');
 $stmt_drop->execute();
 
-$stmt_conn = $db->prepare('CREATE TABLE IF NOT EXISTS musicas (id INTEGER PRIMARY KEY, artista TEXT, titulo TEXT, curtidas INTEGER, descurtidas INTEGER, execucao INTEGER, caminho TEXT);');
+$stmt_drop_p = $db->prepare('DROP TABLE IF EXISTS pedidos;');
+$stmt_drop_p->execute();
+
+$stmt_conn = $db->prepare('CREATE TABLE IF NOT EXISTS musicas (id INTEGER PRIMARY KEY, artista TEXT, titulo TEXT, curtidas INTEGER, descurtidas INTEGER, hora INTEGER, caminho TEXT);');
 $stmt_conn->execute();
+
+$stmt_ped = $db->prepare('CREATE TABLE IF NOT EXISTS pedidos (id INTEGER,  artista TEXT,  titulo TEXT, ip TEXT, hora TEXT);');
+$stmt_ped->execute();
 
 if (trim(file_get_contents($pedidos)) == false) {
 	// AutoDJ

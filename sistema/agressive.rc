@@ -1,0 +1,76 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          agressive
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: startscript agressive
+# Description:       startscript for agressive
+#										 Put in /etc/init.d/agressive with chmod 755
+### END INIT INFO
+
+# Author: Lucas Saliés Brum <lucas@archlinux.com.br>
+
+# agreSSive Vars
+NAME="agressive"
+USER="agressive"
+HOMEDIR="/home/${USER}"
+SHOUT_HOME="${HOMEDIR}/sc"
+DESC="Sound System"
+SCRIPTNAME="/etc/init.d/$NAME"
+TMUX=$(which tmux)
+TMUX_SESSION="agressive"
+
+# Arquivo de configuração separado?
+CONFIG="${HOMEDIR}/config.cfg"
+
+# Diretórios não pesquisados durante a criação da lista
+EXCLUDE="Vinhetas|Amado Batista|Barrerito"
+
+# sc_trans Vars
+TRANS_HOME="${HOMEDIR}/st"
+TRANS_FIND=$(which find)
+TRANS_CHOWN=$(which chown)
+TRANS_PATH="/usr/local/musicas" # Lembre-se de dar um chown -R $USER:$USER
+TRANS_LIST="${TRANS_HOME}/playlists/principal.lst"
+
+# Carrega configurações do arquivo config.cfg, se ele existir...
+if [ -f $CONFIG ]; then
+	. $CONFIG
+fi
+
+do_start()
+{
+    // su $USER -c "cd $SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf 2> /dev/null 1> /dev/null &"
+		su ${USER} -c "${TMUX} new-session -d -s ${TMUX_SESSION} \"cd $SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf 2> /dev/null 1> /dev/null &\""
+		//su $USER -c "cd $TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf 2> /dev/null 1> /dev/null &"
+		su ${USER} -c "${TMUX} -d -s ${TMUX_SESSION}:1 \"cd $TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf 2> /dev/null 1> /dev/null &\""
+}
+
+do_stop()
+{
+		su $USER -c "$TMUX kill-session -t $TMUX_SESSION"
+		$TMUX kill-session -t $TMUX_SESSION
+    pkill -9 sc_serv
+    pkill -9 sc_trans
+}
+
+case "$1" in
+start)
+        echo "Iniciando $DESC $NAME"
+        do_start
+;;
+stop)
+        echo "Parando $DESC $NAME"
+        do_stop
+;;
+restart)
+        echo "Parando $DESC $NAME"
+        do_stop
+        echo "Iniciando $DESC $NAME"
+        do_start
+;;
+*)
+        echo "Uso: $SCRIPTNAME {start|stop|refresh|restart}"
+esac
