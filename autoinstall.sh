@@ -11,8 +11,18 @@ if [ "$(id -u)" != "0" ]; then
    exit 1
 fi
 
+echo "Alterando para a pasta /tmp..."
+echo
+
 cd /tmp
-git clone https://github.com/sistematico/agressive
+
+echo "Clonando o repositório do agreSSive..."
+echo
+
+git clone -q https://github.com/sistematico/agressive
+
+echo "Entrando na pasta /tmp/agressive..."
+echo
 cd agressive
 
 read -p "Qual será o nome do usuário que vai rodar o agreSSive?" usuario_raw
