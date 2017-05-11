@@ -14,7 +14,9 @@ permalink: /instalacao/
 
 # Como Instalar
 
-curl -s https://bit.ly/agressive-install | bash
+```  
+curl -s https://bit.ly/agressive-install | bash  
+```  
 
 # Dúvidas?
 
