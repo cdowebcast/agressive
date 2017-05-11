@@ -6,6 +6,11 @@
 # Criado em 05/02/2017
 # Alterado em 05/02/2017
 
+if [ "$(id -u)" != "0" ]; then
+   echo "Este script deve ser executado apenas como root." 1>&2
+   exit 1
+fi
+
 cd /tmp
 git clone https://github.com/sistematico/agressive
 cd agressive
