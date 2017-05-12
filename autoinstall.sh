@@ -6,75 +6,406 @@
 # Criado em 05/02/2017
 # Alterado em 05/02/2017
 
-if [ "$(id -u)" != "0" ]; then
-   echo "Este script deve ser executado apenas como root." 1>&2
-   exit 1
+echo
+echo "Bem vindo ao:"
+echo '                      ____ ____  _           '
+echo '  __ _  __ _ _ __ ___/ ___/ ___|(_)_   _____ '
+echo ' / _` |/ _` | '__/ _ \___ \___ \| \ \ / / _ \'
+echo '| (_| | (_| | | |  __/___) |__) | |\ V /  __/'
+echo ' \__,_|\__, |_|  \___|____/____/|_| \_/ \___|'
+echo '       |___/  '
+echo
+
+[ "$(id -u)" != "0" ] && echo "Este script deve ser executado apenas como root." 1>&2 && exit 1
+[ ! -x $(which tmux) ] && echo "tmux não encontrado. Abortando..." >&2 && exit 1
+[ ! -x $(which nginx) ] && echo "nginx não encontrado. Abortando..." >&2 && exit 1
+
+if [ -d /etc/agressive ]; then
+  read -p "Foi detectada uma instalação anterior do agreSSive, deseja sobre-escrever? [s/N] " yn
+  while true; do
+    case $yn in
+      [Ss]* ) break;;
+      * ) echo "Abortando a execução do agreSSive..." && exit 1;;
+    esac
+  done
+else
+  mkdir /etc/agressive
 fi
 
+if [ -x $(which apt-get 1> /dev/null) ]; then
+    webpath=$(dpkg -L nginx-common | grep www | tail -1)
+elif [ -x $(which pacman 1> /dev/null) ]; then
+    webpath=$(pacman -Qo nginx | grep www | tail -1)
+else
+  echo "Sistema operacional não identificado. Abortando..."
+  exit 1
+fi
+
+echo
 echo "Alterando para a pasta /tmp..."
 echo
 
 cd /tmp
 
+echo
 echo "Clonando o repositório do agreSSive..."
 echo
 
-git clone -q https://github.com/sistematico/agressive
+if [ -d "/tmp/agressive" ]; then
+  read -p "A pasta /tmp/agressive já existe, apagar e baixar uma nova? [s/N] " yn
+  #yn=$(echo $yn | tr '[A-Z]' '[a-z]')
+  if [ "$yn" == "s" ]; then
+    rm -rf /tmp/agressive
+    git clone https://github.com/sistematico/agressive 2>/dev/null &
+    pid=$! # Process Id of the previous running command
 
+    spin='-\|/'
+
+    i=0
+    while kill -0 $pid 2>/dev/null
+    do
+      i=$(( (i+1) %4 ))
+      printf "\r [clonando] ${spin:$i:1}"
+      sleep .1
+    done
+  fi
+else
+  git clone -q https://github.com/sistematico/agressive 2>/dev/null &
+  pid=$! # Process Id of the previous running command
+
+  spin='-\|/'
+
+  i=0
+  while kill -0 $pid 2>/dev/null
+  do
+    i=$(( (i+1) %4 ))
+    printf "\r [clonando] ${spin:$i:1}"
+    sleep .1
+  done
+fi
+
+echo
 echo "Entrando na pasta /tmp/agressive..."
 echo
-cd agressive
+cd /tmp/agressive
 
-read -p "Qual será o nome do usuário que vai rodar o agreSSive?" usuario_raw
+read -p "Qual será o nome do usuário que vai rodar o agreSSive? [Padrão: agressive]" usuario_raw
+
+usuario_raw=${usuario_raw:-"agressive"}
 
 echo
 echo "Sanitizando o nome de usuário..."
-
-# first, strip underscores
+echo
+# underscores
 limpo=${usuario_raw//_/}
-# next, replace spaces with underscores
+# spaces with underscores
 limpo=${limpo// /_}
-# now, clean out anything that's not alphanumeric or an underscore
+# only alphanumeric or an underscore
 limpo=${limpo//[^a-zA-Z0-9_]/}
-# finally, lowercase with TR
-usuario=$(echo -n $limpo | tr A-Z a-z)
+# lowercase
+usuario=`echo -n $limpo | tr A-Z a-z`
 
 if [ -d $(eval echo "~${usuario}") ]; then
-  echo "Este usuário ou a paste dele já existe, deseja sobre-escrever?"
-
-  # while true; do
-      read -p "Este usuário ou a paste dele já existe, deseja sobre-escrever? [s/n] " yn
-      case $yn in
-          #[Ss]* ) make install; break;;
-          [Ss]* ) break;;
-          [Nn]* ) echo "Abortando a execução do agreSSive..." && exit 1;;
-          *) echo "Por favor, responda sim ou não.";;
-      esac
-  #done
+  read -p "Este usuário ou a pasta dele já existe, deseja sobre-escrever? [s/N] " yn
+  while true; do
+    case $yn in
+      [Ss]* ) break;;
+      * ) echo "Abortando a execução do agreSSive..." && exit 1;;
+    esac
+  done
+  caminho=$(eval echo ~${usuario})
 else
-  read -sp "Senha do usuário e do agreSSive?" senha_raw
+  read -sp "Senha do usuário e do agreSSive? [Padrão: agressive]" senha_raw
   senha=$(perl -e 'print crypt($ARGV[0], "senha_raw")' $senha_raw)
+  caminho="/home/${usuario}"
+  senha_raw=${senha_raw:-agressive}
 fi
-
-caminho=$(eval echo ~${usuario})
 
 echo
 echo "Seguem os dados de instalação:"
 echo "---------------------------------------------"
 echo "Usuário: ${usuario}"
-echo "Senha: $pass"
-echo "Caminho: ${caminho}"
+echo "Senha: $senha"
+echo "Sistema: ${caminho}"
+echo "Web: ${webpath}/agressive"
 echo "---------------------------------------------"
 echo
 
-#while true; do
-    read -p "Deseja continuar? [s/n] " yn
+read -p "Deseja continuar? [s/n] " yn
+while true; do
     case $yn in
-        #[Ss]* ) make install; break;;
         [Ss]* ) break;;
         [Nn]* ) echo "Abortando a execução do agreSSive..." && exit 1;;
-        *) echo "Por favor, responda sim ou não.";;
+        *) echo "Por favor, responda sim ou não. ";;
     esac
-#done
+done
 
-#useradd -m -p encryptedPassword username
+echo
+echo "Criando o usuário: ${usuario}..."
+echo
+
+id "${usuario}" 1> /dev/null 2> /dev/null
+
+if [ ! $? ]; then
+  useradd -r -m -G www-data -c "Usuario do agreSSive" -s /bin/bash -p $senha $usuario
+fi
+
+echo
+echo "Criando os arquivos de configuração..."
+echo
+
+AGRESSIVE_USER=${usuario}
+HOMEDIR="/home/${usuario}"
+SHOUT_HOME="${HOMEDIR}/sc"
+TRANS_HOME="${HOMEDIR}/st"
+TMUX=$(which tmux)
+TRANS_PATH="${HOMEDIR}/musicas"
+
+[ ! -d "$SHOUT_HOME" ] && mkdir $SHOUT_HOME
+[ ! -d "$TRANS_HOME" ] && mkdir $TRANS_HOME
+tar xzf /tmp/agressive/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz -C $SHOUT_HOME
+tar xzf /tmp/agressive/sistema/downloads/sc_trans_linux_x64_10_07_2011.tar.gz -C $TRANS_HOME
+
+cat <<EOF > /etc/agressive/config
+# agreSSive config
+AGRESSIVE_USER=${usuario}
+HOMEDIR="/home/${AGRESSIVE_USER}"
+SHOUT_HOME="${HOMEDIR}/sc"
+TRANS_HOME="${HOMEDIR}/st"
+TMUX=$(which tmux)
+TRANS_PATH="${HOMEDIR}/musicas"
+EOF
+
+chown -R ${usuario}:${usuario} /etc/agressive/
+
+#if [ -x $(which apt-get 1> /dev/null) ]; then
+#cat <<EOF > /etc/init.d/agressive
+cat <<EOF > /tmp/agressive.rc
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          agressive
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: startscript agressive
+# Description:       startscript for agressive
+### END INIT INFO
+
+# Author: Lucas Saliés Brum <lucas@archlinux.com.br>
+
+. /etc/agressive/config
+
+agressive_start()
+{
+		su ${AGRESSIVE_USER} -c "${TMUX} new-session -d -s ${AGRESSIVE_USER} \"cd $SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf\""
+		su ${AGRESSIVE_USER} -c "${TMUX} new-window -d -t ${AGRESSIVE_USER}:2 \"cd $TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf\""
+}
+
+agressive_stop()
+{
+		su $USER -c "$TMUX kill-session -t $TMUX_SESSION"
+		$TMUX kill-session -t $TMUX_SESSION
+    pkill -9 sc_serv
+    pkill -9 sc_trans
+}
+
+case "$1" in
+start)
+        echo "Iniciando o agreSSive..."
+        agressive_start
+;;
+stop)
+        echo "Parando agreSSive..."
+        agressive_stop
+;;
+restart)
+        echo "Parando o agreSSive..."
+        agressive_stop
+        echo "Iniciando o agreSSive..."
+        agressive_start
+;;
+*)
+        echo "Uso: $0 {start|stop|restart}"
+esac
+EOF
+
+#chmod 755 /etc/init.d/agressive
+
+#else
+
+cat <<EOF > /etc/systemd/system/agressive.service
+[Unit]
+Description=agreSSive Framework
+After=network.target
+
+[Service]
+#Type=forking
+Type=oneshot
+ExecStart=/usr/local/bin/agressivectl start
+ExecReload=/usr/local/bin/agressivectl restart
+ExecStop=/usr/local/bin/agressivectl stop
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+#fi
+
+cat <<EOF > /usr/local/bin/agressivectl
+#!/bin/bash
+
+# Author: Lucas Saliés Brum <lucas@archlinux.com.br>
+
+[ -f "/etc/agressive/config" ] &&	. /etc/agressive/config || echo "Arquivo de configuração não encontrado. Abortando..." && exit 1
+
+do_start()
+{
+	if [ "$(whoami)" = "${AGRESSIVE_USER}" ]; then
+		${TMUX} new-session -d -s ${AGRESSIVE_USER} "cd $SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf"
+		${TMUX} new-window -d -t ${AGRESSIVE_USER}:2 "cd $TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf"
+	else
+		su ${AGRESSIVE_USER} -c "${TMUX} new-session -d -s ${AGRESSIVE_USER} \"cd $SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf\""
+		su ${AGRESSIVE_USER} -c "${TMUX} new-window -d -t ${AGRESSIVE_USER}:2 \"cd $TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf\""
+	fi
+}
+
+do_stop()
+{
+    killall -9 sc_serv
+    killall -9 sc_trans
+		su ${AGRESSIVE_USER} -c "$TMUX kill-session -t ${AGRESSIVE_USER}"
+		$TMUX kill-session -t ${AGRESSIVE_USER}
+    #pkill -9 sc_serv
+    #pkill -9 sc_trans
+}
+
+do_attach()
+{
+	if [ "$(whoami)" = "${AGRESSIVE_USER}" ]; then
+    su ${AGRESSIVE_USER} -c "$TMUX kill-session -t ${AGRESSIVE_USER}"
+  else
+    su ${AGRESSIVE_USER} -c "$TMUX kill-session -t ${AGRESSIVE_USER}"
+  fi
+}
+
+case "$1" in
+start)
+        echo "Iniciando o agreSSive..."
+        do_start
+;;
+stop)
+        echo "Parando o agreSSive..."
+        do_stop
+;;
+restart)
+        echo "Re-iniciando o agreSSive..."
+        do_stop
+        do_start
+;;
+attach)
+        echo "Attachando ao agreSSive..."
+        do_attach
+;;
+*)
+        echo "Uso: $0 {start|stop|restart|attach}"
+esac
+EOF
+
+chmod 755 /usr/local/bin/agressivectl
+
+echo "#!/usr/bin/php ${webpath}/agressive/php/engine.php" > ${TRANS_HOME}/playlists/agressive.pls
+
+[ ! -d "${webpath}/agressive" ] && mkdir ${webpath}/agressive/
+
+cp -r /tmp/agressive/web/* ${webpath}/agressive/
+
+touch ${webpath}/agressive/db/agressive.sqlite
+
+chown -R www-data:agressive ${webpath}/agressive
+chmod 775 ${webpath}/agressive/php/engine.php
+chmod 775 ${webpath}/agressive/db ${webpath}/agressive/db/agressive.sqlite
+#chmod 664 ${webpath}/agressive/php/engine.php
+chmod 775 ${webpath}/agressive/{conf,php}
+
+read -p "Título da Rádio [Padrão: Radio agreSSive] " titulo
+read -p "Site da Rádio [Padrão: https://sistematico.github.io/agressive] " site
+read -p "Senha da fonte [Padrão: sourcepasswd] " sourcepasswd
+read -p "Senha do admin [Padrão: adminpasswd] " adminpasswd
+read -p "Gênero [Padrão: Misc] " genero
+read -p "IP [Padrão: localhost] " ip
+read -p "Porta [Padrão: 8000] " porta
+read -p "Bitrate [Padrão: 128000] " bitrate
+
+titulo=${titulo:-"Radio agreSSive"}
+site=${site:-"https://sistematico.github.io/agressive"}
+sourcepasswd=${sourcepasswd:-"sourcepasswd"}
+adminpasswd=${adminpasswd:-"adminpasswd"}
+genero=${genero:-"Misc"}
+ip=${ip:-"localhost"}
+porta=${porta:-"8000"}
+bitrate=${bitrate:-"128000"}
+
+cat <<EOF > ${SHOUT_HOME}/sc_serv_agressive.conf
+;DNAS configuration file
+;Build with agreSSive
+
+password=${sourcepasswd}
+adminpassword=${adminpasswd}
+requirestreamconfigs=1
+logfile=sc_serv.log
+w3clog=sc_w3c.log
+publicserver=always
+banfile=agressive.ban
+ripfile=agressive.rip
+maxuser=512
+streamid=1
+streampath=/stream
+streammaxuser=512
+EOF
+
+cat <<EOF > ${TRANS_HOME}/sc_trans_agressive.conf
+;Transcoder configuration file
+;Build with agreSSive
+
+streamtitle=${titulo}
+streamurl=${site}
+genre=${genero}
+password=${sourcepasswd}
+logfile=sc_trans.log
+playlistfile=agressive.lst
+shuffle=0
+outprotocol=3
+serverip=${ip}
+serverport=${porta}
+uvoxstreamid=1
+uvoxuserid=admin
+uvoxauth=${sourcepasswd}
+bitrate=${bitrate}
+EOF
+
+[ ! -d "/home/${usuario}/musicas" ] && mkdir /home/${usuario}/musicas
+
+read -p "Copiar arquivo de exemplo para /home/${usuario}/musicas? [S/n] " yn
+while true; do
+    case $yn in
+        [Nn]* ) break;;
+        * )
+        if [ -f /tmp/agressive/sistema/musicas/* ]; then
+          cp -fr /tmp/agressive/sistema/musicas/* /home/${usuario}/musicas/
+        fi
+        break
+        ;;
+    esac
+done
+
+chown -R ${usuario}:${usuario} /etc/agressive/ /home/${usuario}
+
+echo
+echo "**********************************************************"
+echo "***                                                    ***"
+echo "***                INSTALAÇÃO COMPLETA                 ***"
+echo "***                                                    ***"
+echo "**********************************************************"
+exit 0

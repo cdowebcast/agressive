@@ -2,28 +2,38 @@
 
 [![Build Status](https://travis-ci.org/sistematico/agressive.svg?branch=master)](https://travis-ci.org/sistematico/agressive)  
 
-Um sistema de pedidos para o Shoutcast
+Streaming de Rádio <b>muito</b> fácil!
 
 ## Pŕe-requisitos
-* Uma máquina virtual ou física rodando o Debian ou Arch Linux.
-* Um servidor Web(testado no Nginx).
-* PHP-FPM e PHP via linha de comando.
-* Não é necessário nenhum banco de dados.
 
-## Instalação
-* Baixe ou clone este repositório: `git clone https://github.com/sistematico/shoutcast-requests.git`
-* Copie o conteúdo da pasta `web/` para o diretório raíz do Servidor Web (Ex.: */var/www/html/*).
-* Crie um novo usuário e copie o conteúdo da pasta `sistema/` para a **$HOME** do novo usuário.
-* Copie o arquivo `sistema/rc-shoutcast` para a pasta `/etc/init.d/shoutcast` (*no caso do Debian/Ubuntu*). E dê permissões de execução (Ex.: *chmod 755 /etc/init.d/shoutcast*).
-* Edite os arquivos: **sistema/engine.php**, **web/conf/config.php**, **sistema/config.cfg**, **sistema/rc-shoutcast(/etc/init.d/shoutcast)** e **sistema/st/playlists/principal.lst** conforme suas necessidades.
-* Habilite a inicialização do shoutcast: `systemctl enable shoutcast` ou `update-rc.d shoutcast defaults`
-* Inicie a rádio: `systemctl start shoutcast` ou `/etc/init.d/shoutcast start`
+* Sistema Operacional Linux(Debian, Ubuntu ou Arch Linux)
+* curl (somento no caso da instalação automática)
+* git
+* Nginx
+* php-fpm e php-cli
+* SQLite3 e php-sqlite
+* tmux
+
+## Instalação automática
+
+```  
+curl -L -s http://bit.ly/agrsv | bash  
+```
+
+## Instalação manual
+* Baixe ou clone este repositório: `git clone https://github.com/sistematico/agressive.git`
+* Copie o conteúdo da pasta `web/` para o diretório raíz do Servidor Web (Ex.: */var/www/html/agressive*).
+* Crie um novo usuário e copie o conteúdo(conteúdo, não a pasta!) da pasta `sistema/` para a **$HOME** do novo usuário.
+* Copie o arquivo `sistema/agressive.rc` para a pasta `/etc/init.d/shoutcast` (*no caso do Debian/Ubuntu*). E dê permissões de execução (Ex.: *chmod 755 /etc/init.d/agressive*).
+* Edite os arquivos: **sistema/engine.php**, **web/conf/config.php**, **sistema/config.cfg** e **sistema/agressive.rc(/etc/init.d/agressive)** conforme suas necessidades.
+* Habilite a inicialização do shoutcast: `systemctl enable agressive` ou `update-rc.d agressive defaults`
+* Inicie a rádio: `systemctl start agressive` ou `/etc/init.d/agressive start`
 * Mais informações em breve...
 
 ## TO-DO
 * Proteção contra pedidos repetidos, por música e por artista.
 
-## Doação
+## Ajude
 Se você gostou do meu trabalho e resolveu usa-lo ou ele ajudou de alguma forma, considere uma doação de qualquer valor usando o Paypal:  
 <a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=QCHXHH4NDDAVE' target='_blank'>
 <img src='https://sistematico.github.io/img/doacao.png' alt='Doe e ajude' />
