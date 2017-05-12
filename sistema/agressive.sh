@@ -1,61 +1,48 @@
-#! /bin/sh
-### BEGIN INIT INFO
-# Provides:          agressive
-# Required-Start:    $remote_fs $syslog
-# Required-Stop:     $remote_fs $syslog
-# Default-Start:     2 3 4 5
-# Default-Stop:      0 1 6
-# Short-Description: startscript agressive
-# Description:       startscript for agressive
-#										 Put in /etc/init.d/agressive with chmod 755
-### END INIT INFO
+#!/bin/bash
 
 # Author: Lucas Saliés Brum <lucas@archlinux.com.br>
 
-# Carrega configurações do arquivo config.cfg, se ele existir...
-CONFIG="${HOMEDIR}/config.cfg"
-[ -f $CONFIG ] &&	. $CONFIG || echo "Arquivo de configuração não encontrado." && exit 1
+[ -f "/etc/agressive/config" ] &&	. /etc/agressive/config || echo "Arquivo de configuração não encontrado. Abortando..." && exit 1
 
-# Checagem
-[ ! -x "$TMUX" ] && echo "tmux não encontrado!" >&2 && exit 1
-
-if [ $(id -u $NAME 2> /dev/null) ]; then
-	echo "Usuário encontrado."
-	exit 0
+if [ $(whoami) = "$USER" ]; then
+	COMANDO=
 else
-	echo "Usuário não encontrado."
-	exit 0	
+	COMANDO="su ${AGRESSIVE_USER} -c"
 fi
 
 do_start()
 {
-		su ${USER} -c "${TMUX} new-session -d -s ${NAME} \"cd $SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf 2> /dev/null 1> /dev/null &\""
-		su ${USER} -c "${TMUX} -d -s ${NAME}:1 \"cd $TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf 2> /dev/null 1> /dev/null &\""
+	if [ $(whoami) = "$USER" ]; then
+		${TMUX} new-session -d -s ${AGRESSIVE_USER} "cd $SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf 2> /dev/null 1> /dev/null &"
+		${TMUX} -d -t ${AGRESSIVE_USER}:2 "cd $TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf 2> /dev/null 1> /dev/null &"
+	else
+		su ${AGRESSIVE_USER} -c "${TMUX} new-session -d -s ${AGRESSIVE_USER} \"cd $SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf 2> /dev/null 1> /dev/null &\""
+		su ${AGRESSIVE_USER} -c "${TMUX} -d -t ${AGRESSIVE_USER}:2 \"cd $TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf 2> /dev/null 1> /dev/null &\""
+	fi
 }
 
 do_stop()
 {
-		su $USER -c "$TMUX kill-session -t $TMUX_SESSION"
-		$TMUX kill-session -t $TMUX_SESSION
+		su $USER -c "$TMUX kill-session -t ${AGRESSIVE_USER}"
+		$TMUX kill-session -t ${AGRESSIVE_USER}
     pkill -9 sc_serv
     pkill -9 sc_trans
 }
 
 case "$1" in
 start)
-        echo "Iniciando o ${DESC}..."
+        echo "Iniciando o agreSSive..."
         do_start
 ;;
 stop)
-        echo "Parando o ${NAME}..."
+        echo "Parando o agreSSive..."
         do_stop
 ;;
 restart)
-        echo "Parando o ${NAME}..."
+        echo "Re-iniciando o agreSSive..."
         do_stop
-        echo "Iniciando o ${NAME}..."
         do_start
 ;;
 *)
-        echo "Uso: $NAME {start|stop|restart}"
+        echo "Uso: $0 {start|stop|restart}"
 esac
