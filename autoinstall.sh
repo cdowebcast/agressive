@@ -4,7 +4,7 @@
 # Um sistema completo para criação e administração de rádios usando o ShoutCast e sc_trans!
 # Por: Lucas Saliés Brum, a.k.a. sistematico <lucas AT archlinux DOT com DOT br>
 # Criado em 05/02/2017
-# Alterado em 05/02/2017
+# Alterado em 13/05/2017
 
 echo
 echo "Bem vindo ao:"
@@ -19,6 +19,23 @@ echo
 [ "$(id -u)" != "0" ] && echo "Este script deve ser executado apenas como root." 1>&2 && exit 1
 [ ! -x $(which tmux) ] && echo "tmux não encontrado. Abortando..." >&2 && exit 1
 [ ! -x $(which nginx) ] && echo "nginx não encontrado. Abortando..." >&2 && exit 1
+
+# Vars
+AGRESSIVE_USER=${usuario}
+HOMEDIR="/home/${usuario}"
+SHOUT_HOME="${HOMEDIR}/sc"
+TRANS_HOME="${HOMEDIR}/st"
+TMUX=$(which tmux)
+TRANS_PATH="${HOMEDIR}/musicas"
+
+# Funções
+procura_arquivos() {
+  if [ "$#" -gt 0 ] && [ ! -e "$1" ]; then
+    echo "O arquivo $1 não foi encontrado. Abortando..." >&2
+    #return 1
+    exit 1
+  fi
+}
 
 if [ -d /etc/agressive ]; then
   read -p "Foi detectada uma instalação anterior do agreSSive, deseja sobre-escrever? [s/N] " yn
@@ -68,6 +85,11 @@ if [ -d "/tmp/agressive" ]; then
       printf "\r [clonando] ${spin:$i:1}"
       sleep .1
     done
+  else
+    if [ ! -f '/tmp/agressive/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz' ] || [ ! -f '/tmp/agressive/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz' ]; then
+      echo "Binários do Shoutcast e/ou sc_trans não encontrados. Abortando..."
+      exit 1
+    fi
   fi
 else
   git clone -q https://github.com/sistematico/agressive 2>/dev/null &
@@ -87,10 +109,10 @@ fi
 echo
 echo "Entrando na pasta /tmp/agressive..."
 echo
+
 cd /tmp/agressive
 
 read -p "Qual será o nome do usuário que vai rodar o agreSSive? [Padrão: agressive]" usuario_raw
-
 usuario_raw=${usuario_raw:-"agressive"}
 
 echo
@@ -121,6 +143,16 @@ else
   senha_raw=${senha_raw:-agressive}
 fi
 
+AGRESSIVE_USER=${usuario}
+HOMEDIR="/home/${usuario}"
+SHOUT_HOME="${HOMEDIR}/sc"
+TRANS_HOME="${HOMEDIR}/st"
+TMUX=$(which tmux)
+TRANS_PATH="${HOMEDIR}/musicas"
+TEMP_PATH="/tmp/agressive"
+SHOUT_BIN="${TEMP_PATH}/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz"
+TRANS_BIN="${TEMP_PATH}/sistema/downloads/sc_trans_linux_x64_10_07_2011.tar.gz"
+
 echo
 echo "Seguem os dados de instalação:"
 echo "---------------------------------------------"
@@ -131,22 +163,21 @@ echo "Web: ${webpath}/agressive"
 echo "---------------------------------------------"
 echo
 
-read -p "Deseja continuar? [s/n] " yn
 while true; do
-    case $yn in
-        [Ss]* ) break;;
-        [Nn]* ) echo "Abortando a execução do agreSSive..." && exit 1;;
-        *) echo "Por favor, responda sim ou não. ";;
-    esac
+  read -p "Deseja continuar? [s/n] " yn
+  case $yn in
+    [Ss]* ) break;;
+    [Nn]* ) echo "Abortando a execução do agreSSive..." && exit 1;;
+    *) echo "Por favor, responda sim ou não. ";;
+  esac
 done
-
-echo
-echo "Criando o usuário: ${usuario}..."
-echo
 
 id "${usuario}" 1> /dev/null 2> /dev/null
 
 if [ ! $? ]; then
+  echo
+  echo "Criando o usuário: ${usuario}..."
+  echo
   useradd -r -m -G www-data -c "Usuario do agreSSive" -s /bin/bash -p $senha $usuario
 fi
 
@@ -154,26 +185,19 @@ echo
 echo "Criando os arquivos de configuração..."
 echo
 
-AGRESSIVE_USER=${usuario}
-HOMEDIR="/home/${usuario}"
-SHOUT_HOME="${HOMEDIR}/sc"
-TRANS_HOME="${HOMEDIR}/st"
-TMUX=$(which tmux)
-TRANS_PATH="${HOMEDIR}/musicas"
-
 [ ! -d "$SHOUT_HOME" ] && mkdir $SHOUT_HOME
 [ ! -d "$TRANS_HOME" ] && mkdir $TRANS_HOME
-tar xzf /tmp/agressive/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz -C $SHOUT_HOME
-tar xzf /tmp/agressive/sistema/downloads/sc_trans_linux_x64_10_07_2011.tar.gz -C $TRANS_HOME
+tar xzf "$SHOUT_BIN" -C $SHOUT_HOME
+tar xzf "$TRANS_BIN" -C $TRANS_HOME
 
 cat <<EOF > /etc/agressive/config
 # agreSSive config
 AGRESSIVE_USER=${usuario}
-HOMEDIR="/home/${AGRESSIVE_USER}"
-SHOUT_HOME="${HOMEDIR}/sc"
-TRANS_HOME="${HOMEDIR}/st"
-TMUX=$(which tmux)
-TRANS_PATH="${HOMEDIR}/musicas"
+HOMEDIR="/home/\${AGRESSIVE_USER}"
+SHOUT_HOME="\${HOMEDIR}/sc"
+TRANS_HOME="\${HOMEDIR}/st"
+TMUX=\$(which tmux)
+TRANS_PATH="\${HOMEDIR}/musicas"
 EOF
 
 chown -R ${usuario}:${usuario} /etc/agressive/
@@ -198,8 +222,8 @@ cat <<EOF > /tmp/agressive.rc
 
 agressive_start()
 {
-		su ${AGRESSIVE_USER} -c "${TMUX} new-session -d -s ${AGRESSIVE_USER} \"cd $SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf\""
-		su ${AGRESSIVE_USER} -c "${TMUX} new-window -d -t ${AGRESSIVE_USER}:2 \"cd $TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf\""
+		su \${AGRESSIVE_USER} -c "\${TMUX} new-session -d -s \${AGRESSIVE_USER} \"cd \$SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf\""
+		su \${AGRESSIVE_USER} -c "\${TMUX} new-window -d -t \${AGRESSIVE_USER}:2 \"cd \$TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf\""
 }
 
 agressive_stop()
@@ -255,19 +279,25 @@ EOF
 
 cat <<EOF > /usr/local/bin/agressivectl
 #!/bin/bash
+# Sistema de controle do agreSSive Framework
+# Por: Lucas Saliés Brum, a.k.a. sistematico <lucas AT archlinux DOT com DOT br>
+# Criado em 05/02/2017
+# Alterado em 13/05/2017
 
-# Author: Lucas Saliés Brum <lucas@archlinux.com.br>
+[ ! -e '/etc/agressive/config' ] && echo "Arquivo de configuração não encontrado. Abortando..." && exit 1
 
-[ -f "/etc/agressive/config" ] &&	. /etc/agressive/config || echo "Arquivo de configuração não encontrado. Abortando..." && exit 1
+source /etc/agressive/config
+
+echo "Passo 1"
 
 do_start()
 {
-	if [ "$(whoami)" = "${AGRESSIVE_USER}" ]; then
-		${TMUX} new-session -d -s ${AGRESSIVE_USER} "cd $SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf"
-		${TMUX} new-window -d -t ${AGRESSIVE_USER}:2 "cd $TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf"
+	if [ "\$(whoami)" = "\${AGRESSIVE_USER}" ]; then
+		\${TMUX} new-session -d -s \${AGRESSIVE_USER} "cd \$SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf"
+		\${TMUX} new-window -d -t \${AGRESSIVE_USER}:2 "cd \$TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf"
 	else
-		su ${AGRESSIVE_USER} -c "${TMUX} new-session -d -s ${AGRESSIVE_USER} \"cd $SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf\""
-		su ${AGRESSIVE_USER} -c "${TMUX} new-window -d -t ${AGRESSIVE_USER}:2 \"cd $TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf\""
+		su \${AGRESSIVE_USER} -c "\${TMUX} new-session -d -s \${AGRESSIVE_USER} \"cd \$SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf\""
+		su \${AGRESSIVE_USER} -c "\${TMUX} new-window -d -t \${AGRESSIVE_USER}:2 \"cd \$TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf\""
 	fi
 }
 
@@ -275,22 +305,20 @@ do_stop()
 {
     killall -9 sc_serv
     killall -9 sc_trans
-		su ${AGRESSIVE_USER} -c "$TMUX kill-session -t ${AGRESSIVE_USER}"
-		$TMUX kill-session -t ${AGRESSIVE_USER}
-    #pkill -9 sc_serv
-    #pkill -9 sc_trans
+		su \${AGRESSIVE_USER} -c "\$TMUX kill-session -t \${AGRESSIVE_USER}"
+		\$TMUX kill-session -t \${AGRESSIVE_USER}
 }
 
 do_attach()
 {
-	if [ "$(whoami)" = "${AGRESSIVE_USER}" ]; then
-    su ${AGRESSIVE_USER} -c "$TMUX kill-session -t ${AGRESSIVE_USER}"
+  if [ "$(whoami)" = "\${AGRESSIVE_USER}" ]; then
+    su \${AGRESSIVE_USER} -c "\$TMUX kill-session -t \${AGRESSIVE_USER}"
   else
-    su ${AGRESSIVE_USER} -c "$TMUX kill-session -t ${AGRESSIVE_USER}"
+    su \${AGRESSIVE_USER} -c "\$TMUX kill-session -t \${AGRESSIVE_USER}"
   fi
 }
 
-case "$1" in
+case "\$1" in
 start)
         echo "Iniciando o agreSSive..."
         do_start
@@ -309,11 +337,12 @@ attach)
         do_attach
 ;;
 *)
-        echo "Uso: $0 {start|stop|restart|attach}"
+        echo $"Uso: \$0 {start|stop|restart|attach}"
 esac
 EOF
 
 chmod 755 /usr/local/bin/agressivectl
+chown ${usuario}:${usuario} /usr/local/bin/agressivectl
 
 echo "#!/usr/bin/php ${webpath}/agressive/php/engine.php" > ${TRANS_HOME}/playlists/agressive.pls
 
