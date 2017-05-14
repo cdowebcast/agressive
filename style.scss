@@ -23,9 +23,9 @@ html {
 }
 
 body {
-	background: $white;
+	background: $cinza;
   font: 18px/1.4 $alegreya;
-  color: $darkGray;
+  color: $white;
 }
 
 .container {
@@ -74,11 +74,11 @@ p {
 }
 
 a {
-  color: $blue;
+  color: $amarelo;
   text-decoration: none;
 	cursor: pointer;
   &:hover, &:active {
-    color: $blue;
+    color: $amarelo;
   }
 }
 
