@@ -7,9 +7,9 @@ Streaming de Rádio <b>muito</b> fácil!
 ## Pŕe-requisitos
 
 * Sistema Operacional Linux(Debian, Ubuntu ou Arch Linux)
-* curl (somento no caso da instalação automática)
+* curl (somente no caso da instalação automática)
 * git
-* Nginx
+* nginx
 * php-fpm e php-cli
 * SQLite3 e php-sqlite
 * tmux
