@@ -279,20 +279,20 @@ EOF
 
 cat <<EOF > /usr/local/bin/agressivectl
 #!/bin/bash
-# Sistema de controle do agreSSive Framework
+#
+# Auto Instalador do agreSSive Framework
+# Um sistema completo para criação e administração de rádios usando o ShoutCast e sc_trans!
 # Por: Lucas Saliés Brum, a.k.a. sistematico <lucas AT archlinux DOT com DOT br>
 # Criado em 05/02/2017
-# Alterado em 13/05/2017
+# Alterado em 05/02/2017
 
 [ ! -e '/etc/agressive/config' ] && echo "Arquivo de configuração não encontrado. Abortando..." && exit 1
 
 source /etc/agressive/config
 
-echo "Passo 1"
-
 do_start()
 {
-	if [ "\$(whoami)" = "\${AGRESSIVE_USER}" ]; then
+	if [ "\$(whoami)" == "\${AGRESSIVE_USER}" ]; then
 		\${TMUX} new-session -d -s \${AGRESSIVE_USER} "cd \$SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf"
 		\${TMUX} new-window -d -t \${AGRESSIVE_USER}:2 "cd \$TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf"
 	else
@@ -303,19 +303,41 @@ do_start()
 
 do_stop()
 {
-    killall -9 sc_serv
-    killall -9 sc_trans
-		su \${AGRESSIVE_USER} -c "\$TMUX kill-session -t \${AGRESSIVE_USER}"
+	sudo killall -9 sc_serv
+	sudo killall -9 sc_trans
+	if [ "\$(whoami)" != "\${AGRESSIVE_USER}" ]; then
+		su ${AGRESSIVE_USER} -c "\$TMUX kill-session -t \${AGRESSIVE_USER}"
+	else
 		\$TMUX kill-session -t \${AGRESSIVE_USER}
+	fi
 }
 
 do_attach()
 {
-  if [ "$(whoami)" = "\${AGRESSIVE_USER}" ]; then
-    su \${AGRESSIVE_USER} -c "\$TMUX kill-session -t \${AGRESSIVE_USER}"
-  else
-    su \${AGRESSIVE_USER} -c "\$TMUX kill-session -t \${AGRESSIVE_USER}"
-  fi
+	if [ "\$(whoami)" == "\${AGRESSIVE_USER}" ]; then
+		\$TMUX a -t \${AGRESSIVE_USER}
+	else
+		su \${AGRESSIVE_USER} -c "\$TMUX a -t \${AGRESSIVE_USER}"
+	fi
+}
+
+do_status()
+{
+	if [ "\$(whoami)" == "\${AGRESSIVE_USER}" ]; then
+		PID=\$(tmux ls | grep \${AGRESSIVE_USER} 1> /dev/null 2> /dev/null)
+		if [ ! "\$PID" ]; then
+			echo "O agreSSive está rodando."
+		else
+			echo "O agreSSive não está rodando."
+		fi
+	else
+		PID=\$(su \${AGRESSIVE_USER} -c "tmux ls | grep \${AGRESSIVE_USER} 1> /dev/null 2> /dev/null")
+		if [ ! "\$PID" ]; then
+			echo "O agreSSive está rodando."
+		else
+			echo "O agreSSive não está rodando."
+		fi
+	fi
 }
 
 case "\$1" in
@@ -336,8 +358,11 @@ attach)
         echo "Attachando ao agreSSive..."
         do_attach
 ;;
+status)
+        do_status
+;;
 *)
-        echo $"Uso: \$0 {start|stop|restart|attach}"
+        echo $"Uso: \$0 {start|stop|restart|attach|status}"
 esac
 EOF
 
@@ -357,6 +382,7 @@ chmod 775 ${webpath}/agressive/php/engine.php
 chmod 775 ${webpath}/agressive/db ${webpath}/agressive/db/agressive.sqlite
 #chmod 664 ${webpath}/agressive/php/engine.php
 chmod 775 ${webpath}/agressive/{conf,php}
+chmod 664 ${webpath}/agressive/conf/config.php
 
 read -p "Título da Rádio [Padrão: Radio agreSSive] " titulo
 read -p "Site da Rádio [Padrão: https://sistematico.github.io/agressive] " site

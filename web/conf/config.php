@@ -1,29 +1,15 @@
 <?php
 
-//if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest')
-//{
+$amin = 3;
+$tmin = 5;
 
-//exit;
-
-//}
-
-//continue;
-
-
-// Caminho das músicas
-$musicas = '/usr/local/musicas';
-
-// Caminho do arquivo de texto que armazena os pedidos (precisa de permissões de escrita: chmod 666 /var/www/site.com/php/pedidos.txt)
-$pedidos = '/var/www/site.com/txt/pedidos.txt';
-
-if (isset($_GET['valor']) && $_GET['valor'] != "") { $valor = $_GET['valor']; }
+$musicaspath = '/usr/local/musicas';
+$dbpath = dirname(__FILE__) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'db';
 $capa_padrao 		= '/img/logotipo.svg';
 $lastfm_api 		= 'CRIE_SUA_API';
 $shoutcast_url	= 'http://site.com';
 $shoutcast_port	= '8000';
 $extensoes = array('mp3');
-
-// Não altere nada abaixo disto!
 
 $acentos = array(
     'Š'=>'S', 'š'=>'s', 'Ð'=>'Dj','Ž'=>'Z', 'ž'=>'z', 'À'=>'A', 'Á'=>'A', 'Â'=>'A', 'Ã'=>'A', 'Ä'=>'A',
@@ -36,7 +22,25 @@ $acentos = array(
     'ă'=>'a', 'î'=>'i', 'â'=>'a', 'ș'=>'s', 'ț'=>'t', 'Ă'=>'A', 'Î'=>'I', 'Â'=>'A', 'Ș'=>'S',
 );
 
-$db = new PDO("sqlite:../db/agressive.sqlite") or die("Impossivel criar BD");
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+    $ip = $_SERVER['HTTP_CLIENT_IP'];
+} elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+    $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+} elseif (!empty($_SERVER['REMOTE_ADDR'])) {
+    $ip = $_SERVER['REMOTE_ADDR'];
+} else {
+  $ip = "0.0.0.0";
+}
+
+function comparaTempo($tempo) {
+  $agora = time();
+  $mins = ($agora-$tempo) / 60;
+  return floor(abs($mins));
+}
+
+if (substr(sprintf('%o', fileperms($dbpath . '/agressive.sqlite') == "0777"), -4)) {
+  $db = new PDO('sqlite:' . dirname(__FILE__) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'db/agressive.sqlite') or die("Impossivel criar BD");
+  $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+}
 
 ?>

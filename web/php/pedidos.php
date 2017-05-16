@@ -1,77 +1,112 @@
 <?php
 
+// SELECT date FROM tbemp ORDER BY date ASC
+// "DELETE FROM my_news WHERE date < ".strtotime('-1 month')
+
+// MUSICAS id artista titulo curtidas descurtidas caminho
+// PEDIDOS id artista titulo ip	hora caminho
+
 ini_set('display_errors', 'On');
 error_reporting(E_ALL);
 
-  //include '../conf/config.php';
-  $db = new PDO("sqlite:../db/agressive.sqlite") or die("Impossivel criar BD");
+// if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+// 	die("Este script não foi desenhado para ser acessado diretamente.");
+// }
 
-	if ($_SERVER['REQUEST_METHOD'] == "GET" && isset($_GET['id']) && $_GET['id'] != "") {
+include(dirname(__FILE__) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'conf/config.php');
 
-    $hora = time();
-    #$stmt1 = $db->prepare('SELECT * FROM pedidos WHERE id=?');
-    $stmt1 = $db->prepare('SELECT * FROM musicas WHERE id=? LIMIT 1');
-    $stmt1->bindParam(1, $_GET['id'], PDO::PARAM_INT);
-    $stmt1->execute();
-    $row = $stmt1->fetch(PDO::FETCH_ASSOC);
-    //$row2 = $stmt1->fetchAll();
+// Pede
+if ($_SERVER['REQUEST_METHOD'] == "GET" && isset($_GET['id']) && $_GET['id'] != "") {
+	$ok = false;
+	$saida = '';
 
-    if ($row)
-    {
-      $diferenca = ($hora - $row['hora']) / 60;
-      if ($diferenca < 5) {
-        $ok = false;
-        $saida = "Você está pedindo muito rápido!\n<br />";
-      } else {
-        $ok = true;
-        $saida = "Você pediu faz tempo!\n<br />";
-      }
-    } else {
-        $ok = true;
-        $saida = "Você ainda não pediu essa música!\n<br />";
-    }
+	$stmt = $db->prepare('SELECT musicas.id, musicas.artista, musicas.titulo, musicas.caminho, pedidos.hora FROM musicas,pedidos WHERE musicas.id=? LIMIT 1');
+  $stmt->bindParam(1, $_GET['id'], PDO::PARAM_INT);
+  $stmt->execute();
+  $coluna = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($ok) {
-      //$row2 = $stmt1->fetch();
-      $stmt2 = $db->prepare("INSERT INTO pedidos (id, artista, titulo, ip, hora) VALUES (:id, :artista, :titulo, :ip, :hora);");
-      $stmt2->bindValue(':id', $row["id"]);
-      $stmt2->bindValue(':artista', $row["artista"]);
-      $stmt2->bindValue(':titulo', $row["titulo"]);
-      $stmt2->bindValue(':ip', 'IP');
-      $stmt2->bindValue(':hora', time());
-      $stmt2->execute();
-    }
-		//$musica = urldecode($_GET['musica']) . "\n";
-		//file_put_contents($pedidos, $musica, FILE_APPEND);
-		//$saida = "Obrigado, música " . pathinfo(basename($musica), PATHINFO_FILENAME) . " pedida.";
+	if ($coluna) {
+		$id = $coluna['id'];
+		$artista = $coluna['artista'];
+		$titulo = $coluna['titulo'];
+		$caminho = $coluna['caminho'];
+	 	//$hora = $coluna['hora'];
+	 }
 
-		echo $saida;
+	 $stmt->closeCursor();
 
-    $db = NULL;
-	}
+	 $stmt2 = $db->prepare('SELECT * FROM pedidos ORDER BY hora DESC LIMIT 100');
+	 $stmt2->execute();
 
-	if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['titulo']) && $_POST['titulo'] != "") {
-		$titulo = strtr($_POST['titulo'], $acentos);
-		$scan = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($musicas));
-		$arquivos = array();
+	 while($coluna2 = $stmt2->fetch( PDO::FETCH_ASSOC )) {
+		 if ($artista == $coluna2['artista'] && $titulo == $coluna2['titulo']) {
+			 $ttempos[] = $coluna2['hora'];
+	 	 } else if ($artista == $coluna2['artista']) {
+			 $atempos[] = $coluna2['hora'];
+		 }
+	 }
 
-		try {
-			foreach ($scan as $arquivo) {
-				$arquivo2 = strtr($arquivo->getPathname(), $acentos);
-				if (!$arquivo->isDir() && $arquivo->isReadable() && in_array($arquivo->getExtension(), $extensoes) && strpos(strtolower($arquivo2), strtolower($titulo)) !== false) {
-					$arquivos[] = pathinfo(basename($arquivo->getPathname()), PATHINFO_FILENAME) . " <a class='pedir' href='" . urlencode($arquivo->getPathname()) . "'>Pedir</a>";
-				}
-			}
+	 $stmt->closeCursor();
 
-			foreach ($arquivos as &$valor) {
-				$saida .= $valor . "<br />";
-			}
+	 //if (in_array($artista, $artistas) && in_array($titulo, $titulos)) {
+	 if (!empty($ttempos)) {
+		 $max1 = max($ttempos);
+	 } else if (!empty($atempos)) {
+		 $max2 = max($atempos);
+	 } else {
+		 $ok = true;
+	 }
 
-		} catch (UnexpectedValueException $e) {
-			$saida = "Erro ao listar diretórios.";
+	 if (isset($max1) && comparaTempo($max1)<$tmin) {
+		 $ok = false;
+		 $saida = "Você já pediu a música " . $titulo . "nos últimos " . $tmin . " minutos.";
+	 }	else if (isset($max2) && comparaTempo($max2)<$amin) {
+		 $ok = false;
+		 $saida = "Você já pediu o artista " . $artista . "nos últimos " . $amin . " minutos.";
+	 }
+
+	//  $arr = array(1, 2, 3, 4);
+	//  foreach ($arr as &$value) {
+	// 	 $value = $value * 2;
+	//  }
+
+	 if ($ok) {
+    $stmt2 = $db->prepare("INSERT INTO pedidos (id, artista, titulo, ip, hora, caminho) VALUES (:id, :artista, :titulo, :ip, :hora, :caminho);");
+    $stmt2->bindValue(':id', $coluna["id"]);
+    $stmt2->bindValue(':artista', $coluna["artista"]);
+    $stmt2->bindValue(':titulo', $coluna["titulo"]);
+    $stmt2->bindValue(':ip', $ip);
+    $stmt2->bindValue(':hora', time());
+    $stmt2->bindValue(':caminho', $coluna["caminho"]);
+    $stmt2->execute();
+    $stmt2->closeCursor();
+    $saida = "Obrigado, música " . $coluna["artista"] . " - " . $coluna["titulo"] . " pedida.";
+  }
+  echo $saida;
+  $db = NULL;
+}
+
+// Lista
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['titulo']) && $_POST['titulo'] != "") {
+	try {
+		$trecho = $_POST['titulo'];
+		$saida = "<table border=1>";
+		$saida .= "<tr><td>Id</td><td>Artista</td><td>Titulo</td><td>Pedido</td></tr>";
+		$result = $db->prepare("SELECT * FROM musicas WHERE artista LIKE :pesquisa OR titulo LIKE :pesquisa");
+		$result->bindValue(':pesquisa', '%'.$trecho.'%');
+		$result->execute();
+		while($row = $result->fetch( PDO::FETCH_ASSOC )) {
+			$saida .= "<tr><td>".$row['id']."</td>";
+			$saida .= "<td>".$row['artista']."</td>";
+			$saida .= "<td>".$row['titulo']."</td>";
+			$saida .= "<td><a class=\"pedir\" href=\"".$row['id']."\">Pedir</a></td></tr>";
 		}
-
+		$saida .= "</table>";
+		$db = NULL;
+	} catch(PDOException $e) {
+		$saida = 'Exception : '.$e->getMessage();
 		echo $saida;
-
 	}
+	echo $saida;
+}
 ?>
