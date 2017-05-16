@@ -19,6 +19,7 @@ echo
 [ "$(id -u)" != "0" ] && echo "Este script deve ser executado apenas como root." 1>&2 && exit 1
 [ ! -x $(which tmux) ] && echo "tmux não encontrado. Abortando..." >&2 && exit 1
 [ ! -x $(which nginx) ] && echo "nginx não encontrado. Abortando..." >&2 && exit 1
+[ ! -x $(which git) ] && echo "git não encontrado. Abortando..." >&2 && exit 1
 
 # Vars
 AGRESSIVE_USER=${usuario}
@@ -138,7 +139,7 @@ if [ -d $(eval echo "~${usuario}") ]; then
   caminho=$(eval echo ~${usuario})
 else
   read -sp "Senha do usuário e do agreSSive? [Padrão: agressive]" senha_raw
-  senha=$(perl -e 'print crypt($ARGV[0], "senha_raw")' $senha_raw)
+  senha=$(perl -e 'print crypt($ARGV[0], "${senha_raw}")' $senha_raw)
   caminho="/home/${usuario}"
   senha_raw=${senha_raw:-agressive}
 fi
@@ -152,6 +153,11 @@ TRANS_PATH="${HOMEDIR}/musicas"
 TEMP_PATH="/tmp/agressive"
 SHOUT_BIN="${TEMP_PATH}/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz"
 TRANS_BIN="${TEMP_PATH}/sistema/downloads/sc_trans_linux_x64_10_07_2011.tar.gz"
+
+read -p "Qual será a pasta do agreSSive no servidor Web?? [Padrão: ${webpath}]" webp
+webp=${webp:-$webpath}
+
+webpath=$webp
 
 echo
 echo "Seguem os dados de instalação:"
@@ -172,9 +178,9 @@ while true; do
   esac
 done
 
-id "${usuario}" 1> /dev/null 2> /dev/null
+id "${usuario}" 1> /dev/null
 
-if [ ! $? ]; then
+if [ $? ]; then
   echo
   echo "Criando o usuário: ${usuario}..."
   echo
@@ -269,7 +275,7 @@ Type=oneshot
 ExecStart=/usr/local/bin/agressivectl start
 ExecReload=/usr/local/bin/agressivectl restart
 ExecStop=/usr/local/bin/agressivectl stop
-Restart=on-abort
+#Restart=on-abort
 
 [Install]
 WantedBy=multi-user.target
@@ -303,8 +309,8 @@ do_start()
 
 do_stop()
 {
-	sudo killall -9 sc_serv
-	sudo killall -9 sc_trans
+	killall -9 sc_serv
+	killall -9 sc_trans
 	if [ "\$(whoami)" != "\${AGRESSIVE_USER}" ]; then
 		su ${AGRESSIVE_USER} -c "\$TMUX kill-session -t \${AGRESSIVE_USER}"
 	else
@@ -371,9 +377,10 @@ chown ${usuario}:${usuario} /usr/local/bin/agressivectl
 
 echo "#!/usr/bin/php ${webpath}/agressive/php/engine.php" > ${TRANS_HOME}/playlists/agressive.pls
 
-[ ! -d "${webpath}/agressive" ] && mkdir ${webpath}/agressive/
+[ ! -d "${webpath}/agressive" ] && mkdir -p ${webpath}/agressive/
 
 cp -r /tmp/agressive/web/* ${webpath}/agressive/
+cp /tmp/agressive/sistema/.tmux.conf ${webpath}/agressive/
 
 touch ${webpath}/agressive/db/agressive.sqlite
 
@@ -409,7 +416,7 @@ cat <<EOF > ${SHOUT_HOME}/sc_serv_agressive.conf
 password=${sourcepasswd}
 adminpassword=${adminpasswd}
 requirestreamconfigs=1
-logfile=sc_serv.log
+logfile=logs/sc_serv.log
 w3clog=sc_w3c.log
 publicserver=always
 banfile=agressive.ban
@@ -428,8 +435,8 @@ streamtitle=${titulo}
 streamurl=${site}
 genre=${genero}
 password=${sourcepasswd}
-logfile=sc_trans.log
-playlistfile=agressive.lst
+logfile=logs/sc_trans.log
+playlistfile=playlists/agressive.lst
 shuffle=0
 outprotocol=3
 serverip=${ip}
@@ -463,4 +470,6 @@ echo "***                                                    ***"
 echo "***                INSTALAÇÃO COMPLETA                 ***"
 echo "***                                                    ***"
 echo "**********************************************************"
+echo
+echo "Acesse: $(hostname)/agressive/php/install.php para continuar a instalação."
 exit 0
