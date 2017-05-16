@@ -51,9 +51,9 @@ else
 fi
 
 if [ -x $(which apt-get 1> /dev/null) ]; then
-    webpath=$(dpkg -L nginx-common | grep www | tail -1)
+    webpath="$(dpkg -L nginx-common | grep www | tail -1)/agressive"
 elif [ -x $(which pacman 1> /dev/null) ]; then
-    webpath=$(pacman -Qo nginx | grep www | tail -1)
+    webpath="$(pacman -Qo nginx | grep www | tail -1)/agressive"
 else
   echo "Sistema operacional não identificado. Abortando..."
   exit 1
@@ -154,9 +154,9 @@ TEMP_PATH="/tmp/agressive"
 SHOUT_BIN="${TEMP_PATH}/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz"
 TRANS_BIN="${TEMP_PATH}/sistema/downloads/sc_trans_linux_x64_10_07_2011.tar.gz"
 
-read -p "Qual será a pasta do agreSSive no servidor Web?? [Padrão: ${webpath}]" webp
+echo
+read -p "Qual será a pasta do agreSSive no servidor Web?? [Padrão: ${webpath}] " webp
 webp=${webp:-$webpath}
-
 webpath=$webp
 
 echo
@@ -165,7 +165,8 @@ echo "---------------------------------------------"
 echo "Usuário: ${usuario}"
 echo "Senha: $senha"
 echo "Sistema: ${caminho}"
-echo "Web: ${webpath}/agressive"
+echo "Config: /etc/agressive/config"
+echo "Web: ${webpath}"
 echo "---------------------------------------------"
 echo
 
@@ -375,21 +376,22 @@ EOF
 chmod 755 /usr/local/bin/agressivectl
 chown ${usuario}:${usuario} /usr/local/bin/agressivectl
 
-echo "#!/usr/bin/php ${webpath}/agressive/php/engine.php" > ${TRANS_HOME}/playlists/agressive.pls
+echo "#!/usr/bin/php ${webpath}/php/engine.php" > ${TRANS_HOME}/playlists/agressive.pls
 
-[ ! -d "${webpath}/agressive" ] && mkdir -p ${webpath}/agressive/
+[ ! -d "${webpath}" ] && mkdir -p ${webpath}
 
-cp -r /tmp/agressive/web/* ${webpath}/agressive/
-cp /tmp/agressive/sistema/.tmux.conf ${webpath}/agressive/
+cp -r /tmp/agressive/web/* ${webpath}
+cp /tmp/agressive/sistema/.tmux.conf ${webpath}
 
-touch ${webpath}/agressive/db/agressive.sqlite
+[ ! -d "${webpath}/db" ] && mkdir -p ${webpath}/db
+touch ${webpath}/db/agressive.sqlite
 
-chown -R www-data:agressive ${webpath}/agressive
-chmod 775 ${webpath}/agressive/php/engine.php
-chmod 775 ${webpath}/agressive/db ${webpath}/agressive/db/agressive.sqlite
-#chmod 664 ${webpath}/agressive/php/engine.php
-chmod 775 ${webpath}/agressive/{conf,php}
-chmod 664 ${webpath}/agressive/conf/config.php
+chown -R www-data:agressive ${webpath}
+chmod 775 ${webpath}/php/engine.php
+chmod 775 ${webpath}/db ${webpath}/db/agressive.sqlite
+#chmod 664 ${webpath}/php/engine.php
+chmod 775 ${webpath}/{conf,php}
+chmod 664 ${webpath}/conf/config.php
 
 read -p "Título da Rádio [Padrão: Radio agreSSive] " titulo
 read -p "Site da Rádio [Padrão: https://sistematico.github.io/agressive] " site
