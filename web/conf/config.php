@@ -38,9 +38,7 @@ function comparaTempo($tempo) {
   return floor(abs($mins));
 }
 
-if (substr(sprintf('%o', fileperms($dbpath . '/agressive.sqlite') == "0777"), -4)) {
-  $db = new PDO('sqlite:' . dirname(__FILE__) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'db/agressive.sqlite') or die("Impossivel criar BD");
-  $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-}
+$db = new PDO('sqlite:' . dirname(__FILE__) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'db/agressive.sqlite') or die("Impossivel criar BD");
+$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 ?>
