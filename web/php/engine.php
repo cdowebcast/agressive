@@ -1,36 +1,37 @@
 <?php
 
+//ini_set('display_errors', 'On');
+//error_reporting(E_ALL);
+
 include(dirname(__FILE__) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'conf/config.php');
 
-if (trim(file_get_contents($pedidos)) == false) {
-	// AutoDJ
-	$scan = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($musicas));
-	$arquivos = array();
-	$extensoes = array('mp3');
+$resultado=$db->prepare("SELECT COUNT(*) FROM pedidos");
+$resultado->execute();
+$registros = $resultado->fetchColumn();
 
-	foreach ($scan as $arquivo) {
-		if (!$arquivo->isDir() && in_array($arquivo->getExtension(), $extensoes)) {
-			$arquivos[] = $arquivo->getPathname();
-		}
-	}
-
-	shuffle($arquivos);
-
-	// Todas as músicas...
-	//foreach ($arquivos as &$valor) {
-	//	echo $valor . "\n";
-	//}
-
-	// Uma música
-	echo array_values($arquivos)[0];
-
+if ($registros > 0) {
+	try {
+	   $result = $db->prepare('SELECT * FROM pedidos ORDER BY hora LIMIT 1');
+	   $result->execute();
+		 $row = $result->fetch();
+		 print($row['caminho']);
+		 $result = $db->prepare('DELETE FROM pedidos WHERE id=:id LIMIT 1');
+		 $result->bindValue(':id', $row['id']);
+		 $result->execute();
+		 $db = NULL;
+	 } catch(PDOException $e) {
+	   print 'Exception : '.$e->getMessage();
+	 }
 } else {
-	// Pedidos
-	$file = file($pedidos);
-  	$output = $file[0];
-  	unset($file[0]);
-  	file_put_contents($pedidos, $file);
-	echo $output;
+	// AutoDJ
+	try {
+		 $result = $db->prepare('SELECT caminho FROM musicas WHERE id >= (abs(random()) % (SELECT max(id) FROM musicas)) LIMIT 1');
+	   $result->execute();
+	   $row = $result->fetch( PDO::FETCH_ASSOC );
+	   print($row['caminho']);
+	   $db = NULL;
+	 } catch(PDOException $e) {
+	   print 'Exception : '.$e->getMessage();
+	 }
 }
-
 ?>
