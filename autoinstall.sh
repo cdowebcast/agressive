@@ -162,6 +162,11 @@ webp=${webp:-$webpath}
 webpath=$webp
 
 echo
+read -p "Usuário padrão do servidor web [Padrão: www-data] " usuario_web
+usuario_web=${usuario_web:-"www-data"}
+
+
+echo
 echo "Seguem os dados de instalação:"
 echo "---------------------------------------------"
 echo "Usuário: ${usuario}"
