@@ -139,9 +139,10 @@ if [ -d $(eval echo "~${usuario}") ]; then
   caminho=$(eval echo ~${usuario})
 else
   read -sp "Senha do usuário e do agreSSive? [Padrão: agressive]" senha_raw
-  senha=$(perl -e 'print crypt($ARGV[0], "${senha_raw}")' $senha_raw)
+  senha=$(perl -e 'print crypt($ARGV[0], "senha_raw")' $senha_raw)
   caminho="/home/${usuario}"
   senha_raw=${senha_raw:-agressive}
+  echo
 fi
 
 AGRESSIVE_USER=${usuario}
@@ -151,7 +152,8 @@ TRANS_HOME="${HOMEDIR}/st"
 TMUX=$(which tmux)
 TRANS_PATH="${HOMEDIR}/musicas"
 TEMP_PATH="/tmp/agressive"
-SHOUT_BIN="${TEMP_PATH}/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz"
+#SHOUT_BIN="${TEMP_PATH}/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz"
+SHOUT_BIN="${TEMP_PATH}/sistema/downloads/sc_serv2_linux_x64-latest.tar.gz"
 TRANS_BIN="${TEMP_PATH}/sistema/downloads/sc_trans_linux_x64_10_07_2011.tar.gz"
 
 echo
@@ -179,7 +181,7 @@ while true; do
   esac
 done
 
-id "${usuario}" 1> /dev/null
+id "${usuario}" 1> /dev/null 2> /dev/null
 
 if [ $? ]; then
   echo
@@ -303,8 +305,8 @@ do_start()
 		\${TMUX} new-session -d -s \${AGRESSIVE_USER} "cd \$SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf"
 		\${TMUX} new-window -d -t \${AGRESSIVE_USER}:2 "cd \$TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf"
 	else
-		su \${AGRESSIVE_USER} -c "\${TMUX} new-session -d -s \${AGRESSIVE_USER} \"cd \$SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf\""
-		su \${AGRESSIVE_USER} -c "\${TMUX} new-window -d -t \${AGRESSIVE_USER}:2 \"cd \$TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf\""
+		su \${AGRESSIVE_USER} -c "\${TMUX} new-session -d -s \${AGRESSIVE_USER} \"cd \$SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf \""
+		su \${AGRESSIVE_USER} -c "\${TMUX} new-window -d -t \${AGRESSIVE_USER}:2 \"cd \$TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf \""
 	fi
 }
 
@@ -317,6 +319,8 @@ do_stop()
 	else
 		\$TMUX kill-session -t \${AGRESSIVE_USER}
 	fi
+  killall -9 sc_serv
+  killall -9 sc_trans
 }
 
 do_attach()
@@ -376,7 +380,10 @@ EOF
 chmod 755 /usr/local/bin/agressivectl
 chown ${usuario}:${usuario} /usr/local/bin/agressivectl
 
-echo "#!/usr/bin/php ${webpath}/php/engine.php" > ${TRANS_HOME}/playlists/agressive.pls
+echo "#!/usr/bin/php ${webpath}/php/engine.php" > ${TRANS_HOME}/playlists/agressive.lst
+chmod 777 ${TRANS_HOME}/playlists/agressive.lst
+[ ! -d "${TRANS_HOME}/archived/" ] && mkdir -p ${TRANS_HOME}/archived/
+[ ! -d "${TRANS_HOME}/priority/archived" ] && mkdir -p ${TRANS_HOME}/priority/archived/
 
 [ ! -d "${webpath}" ] && mkdir -p ${webpath}
 
@@ -388,7 +395,7 @@ touch ${webpath}/db/agressive.sqlite
 
 chown -R www-data:agressive ${webpath}
 chmod 775 ${webpath}/php/engine.php
-chmod 775 ${webpath}/db ${webpath}/db/agressive.sqlite
+chmod 777 ${webpath}/db ${webpath}/db/agressive.sqlite
 #chmod 664 ${webpath}/php/engine.php
 chmod 775 ${webpath}/{conf,php}
 chmod 664 ${webpath}/conf/config.php
@@ -401,52 +408,69 @@ read -p "Gênero [Padrão: Misc] " genero
 read -p "IP [Padrão: localhost] " ip
 read -p "Porta [Padrão: 8000] " porta
 read -p "Bitrate [Padrão: 128000] " bitrate
+read -p "mp3 ou aac? [Padrão: aac] " tipo
+read -p "Máximo de ouvintes [Padrão: 512] " ouvintes
+
+findip="$(/sbin/ip -o -4 addr list venet0 | awk '{print $4}' | cut -d/ -f1 | tail -n 1)"
 
 titulo=${titulo:-"Radio agreSSive"}
 site=${site:-"https://sistematico.github.io/agressive"}
 sourcepasswd=${sourcepasswd:-"sourcepasswd"}
 adminpasswd=${adminpasswd:-"adminpasswd"}
 genero=${genero:-"Misc"}
-ip=${ip:-"localhost"}
+ip=${ip:-$findip}
 porta=${porta:-"8000"}
 bitrate=${bitrate:-"128000"}
+tipo=${tipo:-"aac"}
+
+if [ "$tipo" == "mp3" ]; then
+read -p "Nome de usuário da licença de mp3? [Padrão: nenhum] " lnome
+read -p "Key da licença de mp3? [Padrão: nenhuma] " lkey
+
+cat > $mpeglic <<- EOM
+unlockkeyname=${lnome}
+unlockkeycode=${lkey}
+EOM
+fi
+
 
 cat <<EOF > ${SHOUT_HOME}/sc_serv_agressive.conf
 ;DNAS configuration file
 ;Build with agreSSive
 
-password=${sourcepasswd}
+logfile=logs/agressive.log
 adminpassword=${adminpasswd}
-requirestreamconfigs=1
-logfile=logs/sc_serv.log
-w3clog=sc_w3c.log
-publicserver=always
-banfile=agressive.ban
-ripfile=agressive.rip
+streamadminpassword_1=brandnewman83
 maxuser=512
-streamid=1
-streampath=/stream
-streammaxuser=512
+password=${sourcepasswd}
+requirestreamconfigs=1
+publicserver=always
+streampassword_1=${sourcepasswd}
+streampath_1=/stream
+streammaxuser=${adminpasswd}
+streamauthhash_1=
 EOF
 
 cat <<EOF > ${TRANS_HOME}/sc_trans_agressive.conf
 ;Transcoder configuration file
 ;Build with agreSSive
 
+calendarrewrite=0
 streamtitle=${titulo}
 streamurl=${site}
 genre=${genero}
-password=${sourcepasswd}
+password_1=${sourcepasswd}
+endpointname_1=/stream
+streamid=1
 logfile=logs/sc_trans.log
 playlistfile=playlists/agressive.lst
-shuffle=0
+;shuffle=0
 outprotocol=3
 serverip=${ip}
 serverport=${porta}
-uvoxstreamid=1
-uvoxuserid=admin
-uvoxauth=${sourcepasswd}
 bitrate=${bitrate}
+encoder=${tipo}
+${mpeglic}
 EOF
 
 [ ! -d "/home/${usuario}/musicas" ] && mkdir /home/${usuario}/musicas
@@ -464,6 +488,7 @@ while true; do
     esac
 done
 
+cp /tmp/agressive/sistema/.tmux.conf /home/${usuario}/
 chown -R ${usuario}:${usuario} /etc/agressive/ /home/${usuario}
 
 echo
@@ -474,4 +499,10 @@ echo "***                                                    ***"
 echo "**********************************************************"
 echo
 echo "Acesse: $(hostname)/agressive/php/install.php para continuar a instalação."
+echo
+echo "Para iniciar o serviço digite:"
+echo "systemctl start agressive"
+echo
+echo "Para iniciar automaticamente após o reboot digite:"
+echo "systemctl enable agressive"
 exit 0
