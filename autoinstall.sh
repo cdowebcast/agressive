@@ -6,15 +6,33 @@
 # Criado em 05/02/2017
 # Alterado em 13/05/2017
 
+# Cores
+#Black        0;30     Dark Gray     1;30
+#Red          0;31     Light Red     1;31
+#Green        0;32     Light Green   1;32
+#Brown/Orange 0;33     Yellow        1;33
+#Blue         0;34     Light Blue    1;34
+#Purple       0;35     Light Purple  1;35
+#Cyan         0;36     Light Cyan    1;36
+#Light Gray   0;37     White         1;37
+
+VERMELHO='\033[0;31m'
+LIMPA='\033[0m'
+
+logo() {
+  echo -e ${VERMELHO}
+  echo -e '                      ____ ____  _           '
+  echo -e '  __ _  __ _ _ __ ___/ ___/ ___|(_)_   _____ '
+  echo -e ' / _` |/ _` | '__/ _ \___ \___ \| \ \ / / _ \'
+  echo -e '| (_| | (_| | | |  __/___) |__) | |\ V /  __/'
+  echo -e ' \__,_|\__, |_|  \___|____/____/|_| \_/ \___|'
+  echo -e '       |___/  '
+  echo -e ${LIMPA}
+}
+
 echo
-echo "Bem vindo ao:"
-echo '                      ____ ____  _           '
-echo '  __ _  __ _ _ __ ___/ ___/ ___|(_)_   _____ '
-echo ' / _` |/ _` | '__/ _ \___ \___ \| \ \ / / _ \'
-echo '| (_| | (_| | | |  __/___) |__) | |\ V /  __/'
-echo ' \__,_|\__, |_|  \___|____/____/|_| \_/ \___|'
-echo '       |___/  '
-echo
+echo "Bem vindo ao..."
+logo
 
 [ "$(id -u)" != "0" ] && echo "Este script deve ser executado apenas como root." 1>&2 && exit 1
 [[ "$(find / -iname which)" == "" ]] && echo "which não encontrado. Abortando..." >&2 && exit 1
@@ -29,19 +47,6 @@ SHOUT_HOME="${HOMEDIR}/sc"
 TRANS_HOME="${HOMEDIR}/st"
 TMUX=$(which tmux)
 TRANS_PATH="${HOMEDIR}/musicas"
-
-# Cores
-#Black        0;30     Dark Gray     1;30
-#Red          0;31     Light Red     1;31
-#Green        0;32     Light Green   1;32
-#Brown/Orange 0;33     Yellow        1;33
-#Blue         0;34     Light Blue    1;34
-#Purple       0;35     Light Purple  1;35
-#Cyan         0;36     Light Cyan    1;36
-#Light Gray   0;37     White         1;37
-
-VERMELHO='\033[0;31m'
-LIMPA='\033[0m'
 
 # Funções
 procura_arquivos() {
@@ -88,15 +93,14 @@ fi
 
 echo
 echo "Alterando para a pasta /tmp..."
-echo
 
 cd /tmp
 
 echo
 echo "Clonando o repositório do agreSSive..."
-echo
 
 if [ -d "/tmp/agressive" ]; then
+  echo
   read -p "A pasta /tmp/agressive já existe, apagar e baixar uma nova? [s/N] " yn
   #yn=$(echo $yn | tr '[A-Z]' '[a-z]')
   if [ "$yn" == "s" ]; then
@@ -115,6 +119,7 @@ if [ -d "/tmp/agressive" ]; then
     done
   else
     if [ ! -f '/tmp/agressive/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz' ] || [ ! -f '/tmp/agressive/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz' ]; then
+      echo
       echo "Binários do Shoutcast e/ou sc_trans não encontrados. Abortando..."
       exit 1
     fi
@@ -136,16 +141,15 @@ fi
 
 echo
 echo "Entrando na pasta /tmp/agressive..."
-echo
 
 cd /tmp/agressive
 
+echo
 read -p "Qual será o nome do usuário que vai rodar o agreSSive? [Padrão: agressive]" usuario_raw
 usuario_raw=${usuario_raw:-"agressive"}
 
 echo
 echo "Sanitizando o nome de usuário..."
-echo
 # underscores
 limpo=${usuario_raw//_/}
 # spaces with underscores
@@ -156,20 +160,21 @@ limpo=${limpo//[^a-zA-Z0-9_]/}
 usuario=`echo -n $limpo | tr A-Z a-z`
 
 if [ -d $(eval echo "~${usuario}") ]; then
+  echo
   read -p "Este usuário ou a pasta dele já existe, deseja sobre-escrever? [s/N] " yn
   while true; do
     case $yn in
       [Ss]* ) break;;
-      * ) echo "Abortando a execução do agreSSive..." && exit 1;;
+      * ) echo && echo "Abortando a execução do agreSSive..." && exit 1;;
     esac
   done
   caminho=$(eval echo ~${usuario})
 else
+  echo
   read -sp "Senha do usuário e do agreSSive? [Padrão: agressive]" senha_raw
+  senha_raw=${senha_raw:-"agressive"}
   senha=$(perl -e 'print crypt($ARGV[0], "senha_raw")' $senha_raw)
   caminho="/home/${usuario}"
-  senha_raw=${senha_raw:-agressive}
-  echo
 fi
 
 AGRESSIVE_USER=${usuario}
@@ -212,13 +217,13 @@ echo "Sistema: ${caminho}"
 echo "Config: /etc/agressive/config"
 echo "Web: ${webpath}"
 echo "---------------------------------------------"
-echo
 
 while true; do
+  echo
   read -p "Deseja continuar? [s/n] " yn
   case $yn in
     [Ss]* ) break;;
-    [Nn]* ) echo "Abortando a execução do agreSSive..." && exit 1;;
+    [Nn]* ) echo && echo "Abortando a execução do agreSSive..." && exit 1;;
     *) echo && echo "Por favor, responda sim ou não. ";;
   esac
 done
@@ -228,13 +233,11 @@ id "${usuario}" 1> /dev/null 2> /dev/null
 if [ $? ]; then
   echo
   echo "Criando o usuário: ${usuario}..."
-  echo
-  useradd -r -m -G $grupo_web -c "agreSSive User" -s /bin/bash -p $senha $usuario
+  useradd -r -m -G "${grupo_web}" -c "agreSSive User" -s /bin/bash -p "${senha}" "${usuario}"
 fi
 
 echo
 echo "Criando os arquivos de configuração..."
-echo
 
 [ ! -d "$SHOUT_HOME" ] && mkdir -p $SHOUT_HOME
 [ ! -d "$TRANS_HOME" ] && mkdir -p $TRANS_HOME
@@ -251,7 +254,7 @@ TMUX=\$(which tmux)
 TRANS_PATH="\${HOMEDIR}/musicas"
 EOF
 
-chown -R ${usuario}:${usuario} /etc/agressive/
+#chown -R ${usuario}:${usuario} /etc/agressive/
 
 #if [ -x $(which apt-get 1> /dev/null) ]; then
 #cat <<EOF > /etc/init.d/agressive
@@ -442,6 +445,7 @@ chmod 777 ${webpath}/db ${webpath}/db/agressive.sqlite
 chmod 775 ${webpath}/{conf,php}
 chmod 664 ${webpath}/conf/config.php
 
+echo
 read -p "Título da Rádio [Padrão: Radio agreSSive] " titulo
 read -p "Site da Rádio [Padrão: https://sistematico.github.io/agressive] " site
 read -p "Senha da fonte [Padrão: sourcepasswd] " sourcepasswd
@@ -466,8 +470,9 @@ bitrate=${bitrate:-"128000"}
 tipo=${tipo:-"aac"}
 
 if [ "$tipo" == "mp3" ]; then
-read -p "Nome de usuário da licença de mp3? [Padrão: nenhum] " lnome
-read -p "Key da licença de mp3? [Padrão: nenhuma] " lkey
+  echo
+  read -p "Nome de usuário da licença de mp3? [Padrão: nenhum] " lnome
+  read -p "Key da licença de mp3? [Padrão: nenhuma] " lkey
 
 cat > $mpeglic <<- EOM
 unlockkeyname=${lnome}
@@ -517,6 +522,7 @@ EOF
 
 [ ! -d "/home/${usuario}/musicas" ] && mkdir /home/${usuario}/musicas
 
+echo
 read -p "Copiar arquivo de exemplo para /home/${usuario}/musicas? [S/n] " yn
 while true; do
     case $yn in
@@ -533,18 +539,19 @@ done
 cp /tmp/agressive/sistema/.tmux.conf /home/${usuario}/
 chown -R ${usuario}:${usuario} /etc/agressive/ /home/${usuario}
 
-echo
+
+logo
 echo "**********************************************************"
 echo "***                                                    ***"
 echo "***                INSTALAÇÃO COMPLETA                 ***"
 echo "***                                                    ***"
 echo "**********************************************************"
 echo
-echo "Acesse: $(hostname)/agressive/php/install.php para continuar a instalação."
+echo -e "Acesse: ${VERMELHO}$(hostname)/agressive/php/install.php${LIMPA} para continuar a instalação."
 echo
 echo "Para iniciar o serviço digite:"
-echo "systemctl start agressive"
+echo -e "${VERMELHO}systemctl start agressive${LIMPA}"
 echo
 echo "Para iniciar automaticamente após o reboot digite:"
-echo "systemctl enable agressive"
+echo -e "${VERMELHO}systemctl enable agressive${LIMPA}"
 exit 0
