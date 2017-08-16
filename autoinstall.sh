@@ -200,8 +200,8 @@ echo
 echo "Criando os arquivos de configuração..."
 echo
 
-[ ! -d "$SHOUT_HOME" ] && mkdir $SHOUT_HOME
-[ ! -d "$TRANS_HOME" ] && mkdir $TRANS_HOME
+[ ! -d "$SHOUT_HOME" ] && mkdir -p $SHOUT_HOME
+[ ! -d "$TRANS_HOME" ] && mkdir -p $TRANS_HOME
 tar xzf "$SHOUT_BIN" -C $SHOUT_HOME
 tar xzf "$TRANS_BIN" -C $TRANS_HOME
 
