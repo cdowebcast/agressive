@@ -67,17 +67,21 @@ fi
 if [[ -x $(which apt-get 2> /dev/null) ]]; then
     sistema="debian"
     webpath="$(dpkg -L nginx-common | grep www | tail -1)/agressive"
+    echo
     echo -e "Sistema operacional encontrado: ${VERMELHO}DEBIAN${LIMPA}/${VERMELHO}UBUNTU${LIMPA}!"
 elif [[ -x $(which pacman 2> /dev/null) ]]; then
     sistema="arch"
     webpath="$(pacman -Qo nginx | grep www | tail -1)/agressive"
+    echo
     echo -e "Sistema operacional encontrado: ${VERMELHO}ARCH LINUX${LIMPA}!"
 elif [[ -x $(which yum 2> /dev/null) ]]; then
     sistema="centos"
     #webpath="$(cat /etc/nginx/nginx.conf | grep root | grep '/' | tail -1)/agressive"
     webpath="/var/www/html/agressive"
+    echo
     echo -e "Sistema operacional encontrado: ${VERMELHO}CENTOS${LIMPA}!"
 else
+  echo
   echo "Sistema operacional não identificado. Abortando..."
   exit 1
 fi
@@ -431,7 +435,7 @@ cp /tmp/agressive/sistema/.tmux.conf ${webpath}
 [ ! -d "${webpath}/db" ] && mkdir -p ${webpath}/db
 touch ${webpath}/db/agressive.sqlite
 
-chown -R www-data:agressive ${webpath}
+chown -R ${usuario}:${grupo_web} ${webpath}
 chmod 775 ${webpath}/php/engine.php
 chmod 777 ${webpath}/db ${webpath}/db/agressive.sqlite
 #chmod 664 ${webpath}/php/engine.php
