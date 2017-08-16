@@ -192,7 +192,8 @@ echo
 read -p "Grupo padrão do servidor web [Padrão: www-data] " grupo_web
 grupo_web=${grupo_web:-"www-data"}
 
-if [[ ! $(grep -q $grupo_web /etc/group) ]]; then
+if [[ ! $(grep $grupo_web /etc/group) ]]; then
+  echo
   echo "O grupo $grupo_web não existe, criando..."
   groupadd $grupo_web
 fi
@@ -214,7 +215,7 @@ while true; do
   case $yn in
     [Ss]* ) break;;
     [Nn]* ) echo "Abortando a execução do agreSSive..." && exit 1;;
-    *) echo "Por favor, responda sim ou não. ";;
+    *) echo && echo "Por favor, responda sim ou não. ";;
   esac
 done
 
@@ -224,7 +225,7 @@ if [ $? ]; then
   echo
   echo "Criando o usuário: ${usuario}..."
   echo
-  useradd -r -m -G $grupo -c "agreSSive User" -s /bin/bash -p $senha $usuario
+  useradd -r -m -G $grupo_web -c "agreSSive User" -s /bin/bash -p $senha $usuario
 fi
 
 echo
