@@ -17,7 +17,7 @@ permalink: /instalacao/
 # Como Instalar
 
 ```  
-curl -L -s http://bit.ly/agrsv | bash  
+curl -L -s http://bit.ly/agrsv > agressive-install.sh && bash agressive-install.sh
 ```  
 
 # Dúvidas?
