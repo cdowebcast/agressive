@@ -30,6 +30,19 @@ TRANS_HOME="${HOMEDIR}/st"
 TMUX=$(which tmux)
 TRANS_PATH="${HOMEDIR}/musicas"
 
+# Cores
+#Black        0;30     Dark Gray     1;30
+#Red          0;31     Light Red     1;31
+#Green        0;32     Light Green   1;32
+#Brown/Orange 0;33     Yellow        1;33
+#Blue         0;34     Light Blue    1;34
+#Purple       0;35     Light Purple  1;35
+#Cyan         0;36     Light Cyan    1;36
+#Light Gray   0;37     White         1;37
+
+VERMELHO='\033[0;31m'
+LIMPA='\033[0m'
+
 # Funções
 procura_arquivos() {
   if [ "$#" -gt 0 ] && [ ! -e "$1" ]; then
@@ -51,10 +64,19 @@ else
   mkdir /etc/agressive
 fi
 
-if [ -x $(which apt-get 1> /dev/null) ]; then
+if [[ -x $(which apt-get 2> /dev/null) ]]; then
+    sistema="debian"
     webpath="$(dpkg -L nginx-common | grep www | tail -1)/agressive"
-elif [ -x $(which pacman 1> /dev/null) ]; then
+    echo -e "Sistema operacional encontrado: ${VERMELHO}DEBIAN${LIMPA}/${VERMELHO}UBUNTU${LIMPA}!"
+elif [[ -x $(which pacman 2> /dev/null) ]]; then
+    sistema="arch"
     webpath="$(pacman -Qo nginx | grep www | tail -1)/agressive"
+    echo -e "Sistema operacional encontrado: ${VERMELHO}ARCH LINUX${LIMPA}!"
+elif [[ -x $(which yum 2> /dev/null) ]]; then
+    sistema="centos"
+    #webpath="$(cat /etc/nginx/nginx.conf | grep root | grep '/' | tail -1)/agressive"
+    webpath="/var/www/html/agressive"
+    echo -e "Sistema operacional encontrado: ${VERMELHO}CENTOS${LIMPA}!"
 else
   echo "Sistema operacional não identificado. Abortando..."
   exit 1
