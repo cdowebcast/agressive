@@ -35,7 +35,7 @@ echo "Bem vindo ao..."
 logo
 
 [ "$(id -u)" != "0" ] && echo "Este script deve ser executado apenas como root." 1>&2 && exit 1
-[[ "$(find / -iname which)" == "" ]] && echo "which não encontrado. Abortando..." >&2 && exit 1
+[[ "$(find / -iname which 2> /dev/null)" == "" ]] && echo "which não encontrado. Abortando..." >&2 && exit 1
 [ ! -x $(which tmux) ] && echo "tmux não encontrado. Abortando..." >&2 && exit 1
 [ ! -x $(which nginx) ] && echo "nginx não encontrado. Abortando..." >&2 && exit 1
 [ ! -x $(which git) ] && echo "git não encontrado. Abortando..." >&2 && exit 1
@@ -456,7 +456,8 @@ read -p "Bitrate [Padrão: 128000] " bitrate
 read -p "mp3 ou aac? [Padrão: aac] " tipo
 read -p "Máximo de ouvintes [Padrão: 512] " ouvintes
 
-findip="$(/sbin/ip -o -4 addr list venet0 | awk '{print $4}' | cut -d/ -f1 | tail -n 1)"
+#findip="$(/sbin/ip -o -4 addr list venet0 | awk '{print $4}' | cut -d/ -f1 | tail -n 1)"
+findip="$(/sbin/ip -o -4 addr list | egrep -v '127.0.0.1' | awk '{print $4}' | cut -d/ -f1 | tail -n 1)"
 
 titulo=${titulo:-"Radio agreSSive"}
 site=${site:-"https://sistematico.github.io/agressive"}
@@ -473,10 +474,14 @@ if [ "$tipo" == "mp3" ]; then
   read -p "Nome de usuário da licença de mp3? [Padrão: nenhum] " lnome
   read -p "Key da licença de mp3? [Padrão: nenhuma] " lkey
 
+if [ ! -z "$lnome" ] && [ ! -z "$lkey" ]; then
 cat > $mpeglic <<- EOM
 unlockkeyname=${lnome}
 unlockkeycode=${lkey}
 EOM
+else
+  echo "Licença e/ou nome vazios, revertendo para AAC!"
+  tipo="aac"
 fi
 
 cat <<EOF > ${webpath}/conf/config.php
@@ -584,7 +589,6 @@ done
 
 cp /tmp/agressive/sistema/.tmux.conf /home/${usuario}/
 chown -R ${usuario}:${usuario} /etc/agressive/ /home/${usuario}
-
 
 logo
 echo "**********************************************************"

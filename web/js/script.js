@@ -5,7 +5,7 @@ var fb = 'https://facebook.com/sharer/sharer.php?u=https://sistematico.github.io
 var tw = 'https://twitter.com/intent/tweet?source=https://sistematico.github.io/escondendo-categorias-no-wordpress/&url=https://sistematico.github.io/escondendo-categorias-no-wordpress/&text=Escondendo uma categoria da index do seu site no Wordpress&via=sistematico';
 
 $.SHOUTcast({
-   host : 'agressive.com',
+   host : 'localhost',
    port : 8000,
    interval : 5000,
    stats: function(){

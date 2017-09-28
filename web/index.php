@@ -21,6 +21,7 @@
     ?>
 
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script src="script.js"></script>
+    <script src="js/jquery.shoutcast.min.js"></script>
+    <script src="js/script.js"></script>
   </body>
 </html>

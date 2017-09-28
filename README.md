@@ -17,7 +17,7 @@ Streaming de Rádio <b>muito</b> fácil!
 ## Instalação automática
 
 ```  
-curl -L -s http://bit.ly/agrsv | bash  
+bash <(curl -s -L http://bit.ly/agrsv)
 ```
 
 ## Instalação manual
