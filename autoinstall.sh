@@ -2,11 +2,30 @@
 #
 # Auto Instalador do agreSSive Framework
 # Um sistema completo para criação e administração de rádios usando o ShoutCast e sc_trans!
+#
 # Por: Lucas Saliés Brum, a.k.a. sistematico <lucas AT archlinux DOT com DOT br>
 # Criado em 05/02/2017
-# Alterado em 13/05/2017
+# Alterado em 07/10/2017
 
-# Cores
+##############################
+########## CONFIGS ###########
+##############################
+# Internet Check
+internet_check=false
+
+##############################
+########## VARS ##############
+##############################
+AGRESSIVE_USER=${usuario}
+HOMEDIR="/home/${usuario}"
+SHOUT_HOME="${HOMEDIR}/sc"
+TRANS_HOME="${HOMEDIR}/st"
+TMUX=$(which tmux)
+TRANS_PATH="${HOMEDIR}/musicas"
+
+##############################
+########## CORES #############
+##############################
 #Black        0;30     Dark Gray     1;30
 #Red          0;31     Light Red     1;31
 #Green        0;32     Light Green   1;32
@@ -15,10 +34,12 @@
 #Purple       0;35     Light Purple  1;35
 #Cyan         0;36     Light Cyan    1;36
 #Light Gray   0;37     White         1;37
-
 VERMELHO='\033[0;31m'
 LIMPA='\033[0m'
 
+##############################
+########## FUNÇÕES ###########
+##############################
 logo() {
   echo -e ${VERMELHO}
   echo -e '                      ____ ____  _           '
@@ -30,32 +51,34 @@ logo() {
   echo -e ${LIMPA}
 }
 
+procura_arquivos() {
+  if [ $# -gt 0 ] && [ ! -e $1 ]; then
+    echo "O arquivo ${VERMELHO}$1${LIMPA} não foi encontrado. Abortando..." >&2
+    exit 1
+  fi
+}
+
+##############################
+########## PROGRAMA ##########
+##############################
 echo
 echo "Bem vindo ao..."
 logo
 
 [ "$(id -u)" != "0" ] && echo "Este script deve ser executado apenas como root." 1>&2 && exit 1
-[[ "$(find / -iname which 2> /dev/null)" == "" ]] && echo "which não encontrado. Abortando..." >&2 && exit 1
+#[[ "$(find / -iname which 2> /dev/null)" == "" ]] && echo "which não encontrado. Abortando..." >&2 && exit 1
+[ ! -x $(which tmux) ] && echo "which não encontrado. Abortando..." >&2 && exit 1
 [ ! -x $(which tmux) ] && echo "tmux não encontrado. Abortando..." >&2 && exit 1
 [ ! -x $(which nginx) ] && echo "nginx não encontrado. Abortando..." >&2 && exit 1
 [ ! -x $(which git) ] && echo "git não encontrado. Abortando..." >&2 && exit 1
 
-# Vars
-AGRESSIVE_USER=${usuario}
-HOMEDIR="/home/${usuario}"
-SHOUT_HOME="${HOMEDIR}/sc"
-TRANS_HOME="${HOMEDIR}/st"
-TMUX=$(which tmux)
-TRANS_PATH="${HOMEDIR}/musicas"
-
-# Funções
-procura_arquivos() {
-  if [ "$#" -gt 0 ] && [ ! -e "$1" ]; then
-    echo "O arquivo $1 não foi encontrado. Abortando..." >&2
-    #return 1
+if [ $internet_check == true ]; then
+  ping -q -c1 google.com > /dev/null 2> /dev/null
+  if [ $? -ne 0 ]; then
+    echo "Sem conexão com a internet, abortando..."
     exit 1
   fi
-}
+fi
 
 if [ -d /etc/agressive ]; then
   read -p "Foi detectada uma instalação anterior do agreSSive, deseja sobre-escrever? [s/N] " yn
@@ -76,12 +99,12 @@ if [[ -x $(which apt-get 2> /dev/null) ]]; then
     echo -e "Sistema operacional encontrado: ${VERMELHO}DEBIAN${LIMPA}/${VERMELHO}UBUNTU${LIMPA}!"
 elif [[ -x $(which pacman 2> /dev/null) ]]; then
     sistema="arch"
-    webpath="$(pacman -Qo nginx | grep www | tail -1)/agressive"
+    #webpath="$(pacman -Qo nginx | grep www | tail -1)/agressive"
+    webpath="$(dirname $(pacman -Ql nginx | egrep 'html|www' | tail -n1 | awk '{print $2}'))/agressive"
     echo
     echo -e "Sistema operacional encontrado: ${VERMELHO}ARCH LINUX${LIMPA}!"
 elif [[ -x $(which yum 2> /dev/null) ]]; then
     sistema="centos"
-    #webpath="$(cat /etc/nginx/nginx.conf | grep root | grep '/' | tail -1)/agressive"
     webpath="/var/www/html/agressive"
     echo
     echo -e "Sistema operacional encontrado: ${VERMELHO}CENTOS${LIMPA}!"
@@ -91,20 +114,30 @@ else
   exit 1
 fi
 
+if [ "$sistema" == "arch" ]; then
+  pacman -Q php-sqlite nginx php-fpm 1> /dev/null 2> /dev/null
+  if [ $? -ne 0 ]; then
+    echo
+    echo "Faltam pacotes para a sua distribuição, instalando..."
+    pacman -S php-sqlite nginx php-fpm --noconfirm
+  fi
+fi
+
 echo
 echo "Alterando para a pasta /tmp..."
 
 cd /tmp
 
-echo
-echo "Clonando o repositório do agreSSive..."
-
 if [ -d "/tmp/agressive" ]; then
   echo
   read -p "A pasta /tmp/agressive já existe, apagar e baixar uma nova? [s/N] " yn
-  #yn=$(echo $yn | tr '[A-Z]' '[a-z]')
-  if [ "$yn" == "s" ]; then
-    rm -rf /tmp/agressive
+
+  if [ "$yn" == [sS] ]; then
+    echo
+    echo "Apagando a pasta /tmp/agressive..."    
+    rm -rf /tmp/agressive    
+    echo
+    echo "Clonando o repositório do agreSSive..."
     git clone https://github.com/sistematico/agressive 2>/dev/null &
     pid=$! # Process Id of the previous running command
 
@@ -125,6 +158,8 @@ if [ -d "/tmp/agressive" ]; then
     fi
   fi
 else
+  echo
+  echo "Clonando o repositório do agreSSive..."  
   git clone -q https://github.com/sistematico/agressive 2>/dev/null &
   pid=$! # Process Id of the previous running command
 
@@ -193,9 +228,13 @@ read -p "Qual será a pasta do agreSSive no servidor Web?? [Padrão: ${webpath}]
 webp=${webp:-$webpath}
 webpath=$webp
 
+usuario_web=$(head -n3 /etc/nginx/nginx.conf | grep user | awk '{print $2}' | tr -d ';')
+if [ $usuario_web == "" ]; then
+  usuario_web="www-data"
+fi
+
 echo
-read -p "Usuário padrão do servidor web [Padrão: www-data] " usuario_web
-usuario_web=${usuario_web:-"www-data"}
+read -p "Usuário padrão do servidor web [Padrão: ${usuario_web}] " usuario_web
 
 echo
 read -p "Grupo padrão do servidor web [Padrão: www-data] " grupo_web
@@ -229,7 +268,7 @@ while true; do
   esac
 done
 
-if [[ ! $(id ${usuario} 1> /dev/null 2> /dev/null) ]]; then
+if [[ ! $(id ${usuario} 2> /dev/null) ]]; then
   echo
   echo "Criando o usuário: ${usuario}..."
   useradd -r -m -G "${grupo_web}" -c "agreSSive User" -s /bin/bash -p "${senha}" "${usuario}"
@@ -356,15 +395,15 @@ do_start()
 
 do_stop()
 {
-	killall -9 sc_serv
-	killall -9 sc_trans
+	killall -9 sc_serv 2> /dev/null
+	killall -9 sc_trans 2> /dev/null
 	if [ "\$(whoami)" != "\${AGRESSIVE_USER}" ]; then
-		su ${AGRESSIVE_USER} -c "\$TMUX kill-session -t \${AGRESSIVE_USER}"
+		su ${AGRESSIVE_USER} -c "\$TMUX kill-session -t \${AGRESSIVE_USER}" 2> /dev/null
 	else
-		\$TMUX kill-session -t \${AGRESSIVE_USER}
+		\$TMUX kill-session -t \${AGRESSIVE_USER} 2> /dev/null
 	fi
-  killall -9 sc_serv
-  killall -9 sc_trans
+  killall -9 sc_serv 2> /dev/null
+  killall -9 sc_trans 2> /dev/null
 }
 
 do_attach()
@@ -379,15 +418,15 @@ do_attach()
 do_status()
 {
 	if [ "\$(whoami)" == "\${AGRESSIVE_USER}" ]; then
-		PID=\$(tmux ls | grep \${AGRESSIVE_USER} 1> /dev/null 2> /dev/null)
-		if [ ! "\$PID" ]; then
+		tmux ls | grep \${AGRESSIVE_USER} 1> /dev/null 2> /dev/null
+		if [ \$? = 0 ]; then
 			echo "O agreSSive está rodando."
 		else
 			echo "O agreSSive não está rodando."
 		fi
 	else
-		PID=\$(su \${AGRESSIVE_USER} -c "tmux ls | grep \${AGRESSIVE_USER} 1> /dev/null 2> /dev/null")
-		if [ ! "\$PID" ]; then
+		su \${AGRESSIVE_USER} -c "tmux ls | grep \${AGRESSIVE_USER}" 1> /dev/null 2> /dev/null
+		if [ \$? = 0 ]; then
 			echo "O agreSSive está rodando."
 		else
 			echo "O agreSSive não está rodando."
@@ -474,14 +513,16 @@ if [ "$tipo" == "mp3" ]; then
   read -p "Nome de usuário da licença de mp3? [Padrão: nenhum] " lnome
   read -p "Key da licença de mp3? [Padrão: nenhuma] " lkey
 
-if [ ! -z "$lnome" ] && [ ! -z "$lkey" ]; then
-cat > $mpeglic <<- EOM
+  if [[ ! -z $lnome && ! -z $lkey ]]; then
+    cat > $mpeglic <<- EOM
 unlockkeyname=${lnome}
 unlockkeycode=${lkey}
 EOM
-else
-  echo "Licença e/ou nome vazios, revertendo para AAC!"
-  tipo="aac"
+  else
+    echo "Licença e/ou nome vazios, revertendo para AAC!"
+    tipo="aac"
+  fi
+
 fi
 
 cat <<EOF > ${webpath}/conf/config.php
@@ -530,7 +571,6 @@ function comparaTempo($tempo) {
 
 ?>
 EOF
-
 
 cat <<EOF > ${SHOUT_HOME}/sc_serv_agressive.conf
 ;DNAS configuration file
@@ -590,6 +630,10 @@ done
 cp /tmp/agressive/sistema/.tmux.conf /home/${usuario}/
 chown -R ${usuario}:${usuario} /etc/agressive/ /home/${usuario}
 
+cp /etc/php/php.ini /etc/php/php.ini-$(date +%s)-bkp
+sed -i "s|^\(;extension=pdo_sqlite.so\).*|extension=pdo_sqlite.so|" /etc/php/php.ini
+sed -i "s|^\(;extension=sqlite3.so\).*|extension=sqlite3.so|" /etc/php/php.ini
+
 logo
 echo "**********************************************************"
 echo "***                                                    ***"
@@ -597,7 +641,7 @@ echo "***                INSTALAÇÃO COMPLETA                 ***"
 echo "***                                                    ***"
 echo "**********************************************************"
 echo
-echo -e "Acesse: ${VERMELHO}$(hostname)/agressive/php/install.php${LIMPA} para continuar a instalação."
+echo -e "Acesse: ${VERMELHO}http://$(hostname)/agressive/php/install.php${LIMPA} para continuar a instalação."
 echo
 echo "Para iniciar o serviço digite:"
 echo -e "${VERMELHO}systemctl start agressive${LIMPA}"
