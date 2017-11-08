@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 sudo: enabled
+=======
+>>>>>>> 6ec914b47969855cc107c9d674d640cb7b3579af
 language: php
 php:
   - '5.4'
@@ -6,3 +9,8 @@ php:
   - '5.6'
   - '7.0'
   - '7.1'
+<<<<<<< HEAD
+=======
+  - hhvm
+  - nightly
+>>>>>>> 6ec914b47969855cc107c9d674d640cb7b3579af
