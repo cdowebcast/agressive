@@ -21,7 +21,6 @@ HOMEDIR="/home/${usuario}"
 SHOUT_HOME="${HOMEDIR}/sc"
 TRANS_HOME="${HOMEDIR}/st"
 TMUX=$(which tmux)
-TRANS_PATH="${HOMEDIR}/musicas"
 
 ##############################
 ########## CORES #############
@@ -217,7 +216,6 @@ HOMEDIR="/home/${usuario}"
 SHOUT_HOME="${HOMEDIR}/sc"
 TRANS_HOME="${HOMEDIR}/st"
 TMUX=$(which tmux)
-TRANS_PATH="${HOMEDIR}/musicas"
 TEMP_PATH="/tmp/agressive"
 #SHOUT_BIN="${TEMP_PATH}/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz"
 SHOUT_BIN="${TEMP_PATH}/sistema/downloads/sc_serv2_linux_x64-latest.tar.gz"
@@ -240,6 +238,10 @@ echo
 read -p "Grupo padrão do servidor web [Padrão: www-data] " grupo_web
 grupo_web=${grupo_web:-"www-data"}
 
+echo
+read -p "Caminho onde ficam as músicas [Padrão: ${HOMEDIR}/musicas] " caminho_musicas
+caminho_musicas=${caminho_musicas:-"${HOMEDIR}/musicas"}
+
 if [[ ! $(grep $grupo_web /etc/group) ]]; then
   echo
   echo "O grupo $grupo_web não existe, criando..."
@@ -255,7 +257,7 @@ echo "Senha: $senha"
 echo "Sistema: ${caminho}"
 echo "Config: /etc/agressive/config"
 echo "Web: ${webpath}"
-echo "Caminho das músicas: ${TRANS_PATH}"
+echo "Caminho das músicas: ${caminho_musicas}"
 echo "---------------------------------------------"
 
 while true; do
@@ -289,66 +291,8 @@ HOMEDIR="/home/\${AGRESSIVE_USER}"
 SHOUT_HOME="\${HOMEDIR}/sc"
 TRANS_HOME="\${HOMEDIR}/st"
 TMUX=\$(which tmux)
-TRANS_PATH="\${HOMEDIR}/musicas"
+MUSICAS="\${caminho_musicas}"
 EOF
-
-#chown -R ${usuario}:${usuario} /etc/agressive/
-
-#if [ -x $(which apt-get 1> /dev/null) ]; then
-#cat <<EOF > /etc/init.d/agressive
-cat <<EOF > /tmp/agressive.rc
-#!/bin/sh
-### BEGIN INIT INFO
-# Provides:          agressive
-# Required-Start:    $remote_fs $syslog
-# Required-Stop:     $remote_fs $syslog
-# Default-Start:     2 3 4 5
-# Default-Stop:      0 1 6
-# Short-Description: startscript agressive
-# Description:       startscript for agressive
-### END INIT INFO
-
-# Author: Lucas Saliés Brum <lucas@archlinux.com.br>
-
-. /etc/agressive/config
-
-agressive_start()
-{
-		su \${AGRESSIVE_USER} -c "\${TMUX} new-session -d -s \${AGRESSIVE_USER} \"cd \$SHOUT_HOME; ./sc_serv ./sc_serv_agressive.conf\""
-		su \${AGRESSIVE_USER} -c "\${TMUX} new-window -d -t \${AGRESSIVE_USER}:2 \"cd \$TRANS_HOME; ./sc_trans ./sc_trans_agressive.conf\""
-}
-
-agressive_stop()
-{
-		su $USER -c "$TMUX kill-session -t $TMUX_SESSION"
-		$TMUX kill-session -t $TMUX_SESSION
-    pkill -9 sc_serv
-    pkill -9 sc_trans
-}
-
-case "$1" in
-start)
-        echo "Iniciando o agreSSive..."
-        agressive_start
-;;
-stop)
-        echo "Parando agreSSive..."
-        agressive_stop
-;;
-restart)
-        echo "Parando o agreSSive..."
-        agressive_stop
-        echo "Iniciando o agreSSive..."
-        agressive_start
-;;
-*)
-        echo "Uso: $0 {start|stop|restart}"
-esac
-EOF
-
-#chmod 755 /etc/init.d/agressive
-
-#else
 
 cat <<EOF > /etc/systemd/system/agressive.service
 [Unit]
@@ -504,9 +448,10 @@ sourcepasswd=${sourcepasswd:-"sourcepasswd"}
 adminpasswd=${adminpasswd:-"adminpasswd"}
 genero=${genero:-"Misc"}
 ip=${ip:-$findip}
-porta=${porta:-"8000"}
-bitrate=${bitrate:-"128000"}
+porta=${porta:-8000}
+bitrate=${bitrate:-128000}
 tipo=${tipo:-"aac"}
+ouvintes=${ouvintes:-512}
 
 if [ "$tipo" == "mp3" ]; then
   echo
@@ -531,7 +476,7 @@ cat <<EOF > ${webpath}/conf/config.php
 \$amin = 3;
 \$tmin = 5;
 
-\$musicaspath = '${TRANS_PATH}';
+\$musicaspath = '${caminho_musicas}';
 \$dbpath = dirname(__FILE__) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'db';
 \$capa_padrao 		= '/img/logotipo.svg';
 \$lastfm_api 		= 'CRIE_SUA_API';
@@ -576,17 +521,21 @@ cat <<EOF > ${SHOUT_HOME}/sc_serv_agressive.conf
 ;DNAS configuration file
 ;Build with agreSSive
 
+w3clog=logs/sc_w3c.log
 logfile=logs/agressive.log
 adminpassword=${adminpasswd}
-streamadminpassword_1=brandnewman83
-maxuser=512
+streamadminpassword_1=${adminpasswd}
+maxuser=${ouvintes}
 password=${sourcepasswd}
+banfile=agressive.ban
+ripfile=agressive.rip
 requirestreamconfigs=1
+portbase=${porta:-8000}
 publicserver=always
-streampassword_1=${sourcepasswd}
-streampath_1=/stream
+streamid=1
+streampath=/stream
 streammaxuser=${adminpasswd}
-streamauthhash_1=
+streamauthhash=
 EOF
 
 cat <<EOF > ${TRANS_HOME}/sc_trans_agressive.conf
@@ -599,15 +548,15 @@ streamurl=${site}
 genre=${genero}
 password_1=${sourcepasswd}
 endpointname_1=/stream
-streamid=1
+streamid_1=1
 logfile=logs/sc_trans.log
 playlistfile=playlists/agressive.lst
 ;shuffle=0
-outprotocol=3
-serverip=${ip}
-serverport=${porta}
-bitrate=${bitrate}
-encoder=${tipo}
+outprotocol_1=3
+serverip_1=${ip}
+serverport_1=${porta}
+bitrate_1=${bitrate}
+encoder_1=${tipo}
 ${mpeglic}
 EOF
 
