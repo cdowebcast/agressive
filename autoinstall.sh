@@ -300,12 +300,10 @@ Description=agreSSive Framework
 After=network.target
 
 [Service]
-#Type=forking
-Type=oneshot
+Type=forking
 ExecStart=/usr/local/bin/agressivectl start
 ExecReload=/usr/local/bin/agressivectl restart
 ExecStop=/usr/local/bin/agressivectl stop
-#Restart=on-abort
 
 [Install]
 WantedBy=multi-user.target
@@ -423,7 +421,6 @@ touch ${webpath}/db/agressive.sqlite
 chown -R ${usuario}:${grupo_web} ${webpath}
 chmod 775 ${webpath}/php/engine.php
 chmod 777 ${webpath}/db ${webpath}/db/agressive.sqlite
-#chmod 664 ${webpath}/php/engine.php
 chmod 775 ${webpath}/{conf,php}
 chmod 664 ${webpath}/conf/config.php
 
