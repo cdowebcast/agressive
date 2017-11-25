@@ -1,0 +1,79 @@
+@font-face {
+    font-family: 'arvo';
+    src: url('../fontes/arvo.woff2') format('woff2'),
+         url('../fontes/arvo.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: 'arvo';
+  font-size: 1em;
+  margin: 0 auto;
+  color: #D8DEE9;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background-color: #2E3440;
+}
+
+::-moz-selection,
+::selection {
+  background-color: #434C5E !important;
+}
+
+img {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.medialinks {
+  margin-top: 40px;
+}
+
+.medialinks a {
+  opacity: 0.7;
+  margin: 0 auto;
+  padding: 16px;
+  transition: all 0.4s ease;
+}
+
+.medialinks a:hover{
+  outline: none;
+  opacity: 1.0;
+}
+
+.medialinks a:visited,
+.medialinks a:link {
+  text-decoration: none;
+  outline: none;
+}
+
+.icon-medialink {
+  width: 24px;
+  height: 24px;
+}
+
+#footer-copyright {
+  opacity: 0.5;
+  margin: 0 auto;
+  margin-top: 40px;
+}
+
+#player {
+  display: inline-block;
+}
+/*#logo {
+  width: 200px;
+  height: 200px;
+}*/

@@ -25,9 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] == "GET" && isset($_GET['id']) && $_GET['id'] != 
 	$saida = 'Ocorreu um erro inesperado.';
 
 	$stmt = $db->prepare('SELECT musicas.id, musicas.artista, musicas.titulo, musicas.caminho, pedidos.hora FROM musicas,pedidos WHERE musicas.id=? LIMIT 1');
-  $stmt->bindParam(1, $_GET['id'], PDO::PARAM_INT);
-  $stmt->execute();
-  $coluna = $stmt->fetch(PDO::FETCH_ASSOC);
+  	$stmt->bindParam(1, $_GET['id'], PDO::PARAM_INT);
+  	$stmt->execute();
+  	$coluna = $stmt->fetch(PDO::FETCH_ASSOC);
 
 	if ($coluna) {
 		$id = $coluna['id'];
@@ -68,20 +68,20 @@ if ($_SERVER['REQUEST_METHOD'] == "GET" && isset($_GET['id']) && $_GET['id'] != 
 	// 	 $value = $value * 2;
 	//  }
 
-	 if ($ok && isset($coluna["artista"]) && isset($coluna["titulo"]) && !empty($coluna["artista"]) && !empty($coluna["titulo"])) {
-    $stmt2 = $db->prepare("INSERT INTO pedidos (id, artista, titulo, ip, hora, caminho) VALUES (:id, :artista, :titulo, :ip, :hora, :caminho);");
-    $stmt2->bindValue(':id', $coluna["id"]);
-    $stmt2->bindValue(':artista', $coluna["artista"]);
-    $stmt2->bindValue(':titulo', $coluna["titulo"]);
-    $stmt2->bindValue(':ip', $ip);
-    $stmt2->bindValue(':hora', time());
-    $stmt2->bindValue(':caminho', $coluna["caminho"]);
-    $stmt2->execute();
-    $stmt2->closeCursor();
-    $saida = "Obrigado, música " . $coluna["artista"] . " - " . $coluna["titulo"] . " pedida.";
-  }
-  echo $saida;
-  $db = NULL;
+	if ($ok && isset($coluna["artista"]) && isset($coluna["titulo"]) && !empty($coluna["artista"]) && !empty($coluna["titulo"])) {
+		    $stmt2 = $db->prepare("INSERT INTO pedidos (id, artista, titulo, ip, hora, caminho) VALUES (:id, :artista, :titulo, :ip, :hora, :caminho);");
+		    $stmt2->bindValue(':id', $coluna["id"]);
+		    $stmt2->bindValue(':artista', $coluna["artista"]);
+		    $stmt2->bindValue(':titulo', $coluna["titulo"]);
+		    $stmt2->bindValue(':ip', $ip);
+		    $stmt2->bindValue(':hora', time());
+		    $stmt2->bindValue(':caminho', $coluna["caminho"]);
+		    $stmt2->execute();
+		    $stmt2->closeCursor();
+		    $saida = "Obrigado, música " . $coluna["artista"] . " - " . $coluna["titulo"] . " pedida.";
+  	}
+  	echo $saida;
+  	$db = NULL;
 }
 
 // Lista
