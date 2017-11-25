@@ -424,20 +424,19 @@ chmod 777 ${webpath}/db ${webpath}/db/agressive.sqlite
 chmod 775 ${webpath}/{conf,php}
 chmod 664 ${webpath}/conf/config.php
 
+findip="$(/sbin/ip -o -4 addr list | egrep -v '127.0.0.1' | awk '{print $4}' | cut -d/ -f1 | tail -n 1)"
+
 echo
 read -p "Título da Rádio [Padrão: Radio agreSSive] " titulo
 read -p "Site da Rádio [Padrão: https://sistematico.github.io/agressive] " site
 read -p "Senha da fonte [Padrão: sourcepasswd] " sourcepasswd
 read -p "Senha do admin [Padrão: adminpasswd] " adminpasswd
 read -p "Gênero [Padrão: Misc] " genero
-read -p "IP/Domínio [Padrão: localhost] " ip
+read -p "IP/Domínio [Padrão: ${findip}] " ip
 read -p "Porta [Padrão: 8000] " porta
 read -p "Bitrate [Padrão: 128000] " bitrate
 read -p "mp3 ou aac? [Padrão: aac] " tipo
 read -p "Máximo de ouvintes [Padrão: 512] " ouvintes
-
-#findip="$(/sbin/ip -o -4 addr list venet0 | awk '{print $4}' | cut -d/ -f1 | tail -n 1)"
-findip="$(/sbin/ip -o -4 addr list | egrep -v '127.0.0.1' | awk '{print $4}' | cut -d/ -f1 | tail -n 1)"
 
 titulo=${titulo:-"Radio agreSSive"}
 site=${site:-"https://sistematico.github.io/agressive"}
@@ -557,16 +556,16 @@ encoder_1=${tipo}
 ${mpeglic}
 EOF
 
-[ ! -d "/home/${usuario}/musicas" ] && mkdir /home/${usuario}/musicas
+[ ! -d $caminho_musicas ] && mkdir -p $caminho_musicas
 
 echo
-read -p "Copiar arquivo de exemplo para /home/${usuario}/musicas? [S/n] " yn
+read -p "Copiar os arquivos de exemplo para ${caminho_musicas}? [S/n] " yn
 while true; do
     case $yn in
         [Nn]* ) break;;
         * )
         if [ -f /tmp/agressive/sistema/musicas/* ]; then
-          cp -fr /tmp/agressive/sistema/musicas/* /home/${usuario}/musicas/
+          cp -fr /tmp/agressive/sistema/musicas/* ${caminho_musicas}/
         fi
         break
         ;;
@@ -579,6 +578,16 @@ chown -R ${usuario}:${usuario} /etc/agressive/ /home/${usuario}
 cp /etc/php/php.ini /etc/php/php.ini-$(date +%s)-bkp
 sed -i "s|^\(;extension=pdo_sqlite.so\).*|extension=pdo_sqlite.so|" /etc/php/php.ini
 sed -i "s|^\(;extension=sqlite3.so\).*|extension=sqlite3.so|" /etc/php/php.ini
+
+if [ -f ${webpath}/db/agressive.sqlite ]; then
+  echo
+  echo "O banco de dados já existe, apagando..."
+  rm -f ${webpath}/db/agressive.sqlite 
+fi
+
+echo
+echo "Instalando o banco de dados SQLite3..."
+php ${webpath}/php/install.php
 
 logo
 echo "**********************************************************"

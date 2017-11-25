@@ -3,12 +3,12 @@
 $amin = 3;
 $tmin = 5;
 
-$musicaspath = '/usr/local/musicas';
-$dbpath = dirname(__FILE__) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'db';
+$musicaspath    = '/usr/local/musicas';
+$dbpath         = dirname(__FILE__) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'db';
 $capa_padrao 		= '/img/logotipo.svg';
 $lastfm_api 		= 'CRIE_SUA_API';
-$shoutcast_url	= 'http://site.com';
-$shoutcast_port	= '8000';
+$shoutcast_url	= 'http://localhost';
+$shoutcast_port	= '9000';
 $extensoes = array('mp3');
 
 $acentos = array(

@@ -1,5 +1,9 @@
 <?php
 
+	if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+ 		die("Este script não foi desenhado para ser acessado diretamente.");
+	}
+
 // if (isset($_POST)) {
 	include(dirname(__FILE__) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'conf/config.php');
 

@@ -1,3 +1,6 @@
+<?php
+  include_once "conf/config.php";
+?>
 <!DOCTYPE html>
 <html lang="pt-br">
   <head>
@@ -26,7 +29,7 @@
     <div class="container">
       <img id="logo" src="img/agressive.png"/>
       <h1>Agressive</h1>
-      <div id="player"><audio id="audio-player" src="http://localhost:9000/;" controls autoplay preload="none"></audio></div>
+      <div id="player"><audio id="audio-player" src="<?php echo $shoutcast_url . ':' . $shoutcast_port . '/;'; ?>" controls autoplay preload="none"></audio></div>
       <div class="medialinks">
         <a id="link-github" href="https://github.com/sistematico/agressive" target="_blank"><img src="img/github.svg" alt="GitHub" class="icon-medialink"></a>
       </div>
