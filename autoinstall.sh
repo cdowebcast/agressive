@@ -12,6 +12,8 @@
 ##############################
 # Internet Check
 internet_check=false
+# dev|master
+repo="dev"
 
 ##############################
 ########## VARS ##############
@@ -137,7 +139,7 @@ if [ -d "/tmp/agressive" ]; then
     rm -rf /tmp/agressive    
     echo
     echo "Clonando o repositório do agreSSive..."
-    git clone https://github.com/sistematico/agressive 2>/dev/null &
+    git clone -b $repo -q https://github.com/sistematico/agressive 2>/dev/null &
     pid=$! # Process Id of the previous running command
 
     spin='-\|/'
@@ -159,7 +161,7 @@ if [ -d "/tmp/agressive" ]; then
 else
   echo
   echo "Clonando o repositório do agreSSive..."  
-  git clone -q https://github.com/sistematico/agressive 2>/dev/null &
+  git clone -b $repo -q https://github.com/sistematico/agressive 2>/dev/null &
   pid=$! # Process Id of the previous running command
 
   spin='-\|/'
