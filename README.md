@@ -32,6 +32,7 @@ bash <(curl -s -L http://bit.ly/agrsv)
 
 ## TO-DO
 * Proteção contra pedidos repetidos, por música e por artista.
+* Sistema de sorteio para o AutoDJ com "peso" para músicas e artistas.
 
 ## Ajude
 Se você gostou do meu trabalho e resolveu usa-lo ou ele ajudou de alguma forma, considere uma doação de qualquer valor usando o Paypal:  
