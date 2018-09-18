@@ -66,7 +66,6 @@ logo
 
 [ "$(id -u)" != "0" ] && echo "Este script deve ser executado apenas como root." 1>&2 && exit 1
 #[[ "$(find / -iname which 2> /dev/null)" == "" ]] && echo "which não encontrado. Abortando..." >&2 && exit 1
-[ ! $(which tmux) ] && echo "which não encontrado. Abortando..." >&2 && exit 1
 [ ! $(which tmux) ] && echo "tmux não encontrado. Abortando..." >&2 && exit 1
 [ ! $(which nginx) ] && echo "nginx não encontrado. Abortando..." >&2 && exit 1
 [ ! $(which git) ] && echo "git não encontrado. Abortando..." >&2 && exit 1
