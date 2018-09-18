@@ -150,7 +150,7 @@ if [ -d "$AGRESSIVE_TEMP" ]; then
       sleep .1
     done
   else
-    if [ ! -f '$AGRESSIVE_TEMP/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz' ] || [ ! -f '$AGRESSIVE_TEMP/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz' ]; then
+    if [ ! -f '$AGRESSIVE_TEMP/sistema/downloads/sc_serv2_linux_x64-latest.tar.gz' ] || [ ! -f '$AGRESSIVE_TEMP/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz' ]; then
       echo
       echo "Binários do Shoutcast e/ou sc_trans não encontrados. Abortando..."
       exit 1
