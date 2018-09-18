@@ -4,8 +4,8 @@
 # Um sistema completo para criação e administração de rádios usando o ShoutCast e sc_trans!
 #
 # Por: Lucas Saliés Brum, a.k.a. sistematico <lucas AT archlinux DOT com DOT br>
-# Criado em 05/02/2017
-# Alterado em 07/10/2017
+# Criado em:    05/02/2017 08:59:53
+# Alterado em:  18/09/2018 08:59:59
 
 ##############################
 ########## CONFIGS ###########
