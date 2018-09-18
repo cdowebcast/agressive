@@ -4,9 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    
     <title>agreSSive</title>
-    
     <meta name="description" content="">
     <meta name="keywords" content="">
     <meta name="author" content="">
@@ -26,16 +24,16 @@
     <div class="container">
       <img id="logo" src="img/agressive.png"/>
       <h1>Agressive</h1>
-      <div id="player"><audio id="audio-player" src="http://localhost:9000/;" controls autoplay preload="none"></audio></div>
+      <div id="player"><audio id="audio-player" src="http://localhost:8000/;" controls autoplay preload="none"></audio></div>
       <div class="medialinks">
         <a id="link-github" href="https://github.com/sistematico/agressive" target="_blank"><img src="img/github.svg" alt="GitHub" class="icon-medialink"></a>
       </div>
       <footer>
         <div id="footer-copyright">
-          <p>Copyright &copy; 2017 Lucas Saliés Brum</p>
+          <p>Copyright &copy; 2017-2018 Lucas Saliés Brum</p>
         </div>
       </footer>
-    </div>    
+    </div>
 
     <script src="js/jquery.min.js"></script>
     <script src="js/mediaelement-and-player.min.js"></script>
@@ -49,7 +47,7 @@
           audioWidth: 130,
           success: function() {}
         });
-      });   
+      });
     </script>
   </body>
 </html>
