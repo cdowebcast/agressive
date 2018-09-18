@@ -127,14 +127,14 @@ echo "Alterando para a pasta /tmp..."
 
 cd /tmp
 
-if [ -d "/tmp/agressive" ]; then
+if [ -d "$AGRESSIVE_TEMP" ]; then
   echo
-  read -p "A pasta /tmp/agressive já existe, apagar e baixar uma nova? [s/N] " yn
+  read -p "A pasta $AGRESSIVE_TEMP já existe, apagar e baixar uma nova? [s/N] " yn
 
   if [ "$yn" == [sS] ]; then
     echo
-    echo "Apagando a pasta /tmp/agressive..."    
-    rm -rf /tmp/agressive    
+    echo "Apagando a pasta $AGRESSIVE_TEMP..."
+    rm -rf $AGRESSIVE_TEMP
     echo
     echo "Clonando o repositório do agreSSive..."
     git clone https://github.com/sistematico/agressive 2>/dev/null &
@@ -150,7 +150,7 @@ if [ -d "/tmp/agressive" ]; then
       sleep .1
     done
   else
-    if [ ! -f '/tmp/agressive/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz' ] || [ ! -f '/tmp/agressive/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz' ]; then
+    if [ ! -f '$AGRESSIVE_TEMP/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz' ] || [ ! -f '$AGRESSIVE_TEMP/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz' ]; then
       echo
       echo "Binários do Shoutcast e/ou sc_trans não encontrados. Abortando..."
       exit 1
@@ -158,7 +158,7 @@ if [ -d "/tmp/agressive" ]; then
   fi
 else
   echo
-  echo "Clonando o repositório do agreSSive..."  
+  echo "Clonando o repositório do agreSSive..."
   git clone -q https://github.com/sistematico/agressive 2>/dev/null &
   pid=$! # Process Id of the previous running command
 
@@ -174,9 +174,10 @@ else
 fi
 
 echo
-echo "Entrando na pasta /tmp/agressive..."
+echo "Entrando na pasta $AGRESSIVE_TEMP..."
 
-cd /tmp/agressive
+[ ! -d $AGRESSIVE_TEMP ] && mkdir $AGRESSIVE_TEMP
+cd $AGRESSIVE_TEMP
 
 echo
 read -p "Qual será o nome do usuário que vai rodar o agreSSive? [Padrão: agressive]" usuario_raw
@@ -216,7 +217,7 @@ HOMEDIR="/home/${usuario}"
 SHOUT_HOME="${HOMEDIR}/sc"
 TRANS_HOME="${HOMEDIR}/st"
 TMUX=$(which tmux)
-TEMP_PATH="/tmp/agressive"
+TEMP_PATH="$AGRESSIVE_TEMP"
 #SHOUT_BIN="${TEMP_PATH}/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz"
 SHOUT_BIN="${TEMP_PATH}/sistema/downloads/sc_serv2_linux_x64-latest.tar.gz"
 TRANS_BIN="${TEMP_PATH}/sistema/downloads/sc_trans_linux_x64_10_07_2011.tar.gz"
@@ -412,8 +413,8 @@ chmod 777 ${TRANS_HOME}/playlists/agressive.lst
 
 [ ! -d "${webpath}" ] && mkdir -p ${webpath}
 
-cp -r /tmp/agressive/web/* ${webpath}
-cp /tmp/agressive/sistema/.tmux.conf ${webpath}
+cp -r $AGRESSIVE_TEMP/web/* ${webpath}
+cp $AGRESSIVE_TEMP/sistema/.tmux.conf ${webpath}
 
 [ ! -d "${webpath}/db" ] && mkdir -p ${webpath}/db
 touch ${webpath}/db/agressive.sqlite
@@ -565,15 +566,15 @@ while true; do
     case $yn in
         [Nn]* ) break;;
         * )
-        if [ -f /tmp/agressive/sistema/musicas/* ]; then
-          cp -fr /tmp/agressive/sistema/musicas/* /home/${usuario}/musicas/
+        if [ -f $AGRESSIVE_TEMP/sistema/musicas/* ]; then
+          cp -fr $AGRESSIVE_TEMP/sistema/musicas/* /home/${usuario}/musicas/
         fi
         break
         ;;
     esac
 done
 
-cp /tmp/agressive/sistema/.tmux.conf /home/${usuario}/
+cp $AGRESSIVE_TEMP/sistema/.tmux.conf /home/${usuario}/
 chown -R ${usuario}:${usuario} /etc/agressive/ /home/${usuario}
 
 cp /etc/php/php.ini /etc/php/php.ini-$(date +%s)-bkp
