@@ -21,6 +21,7 @@ HOMEDIR="/home/${usuario}"
 SHOUT_HOME="${HOMEDIR}/sc"
 TRANS_HOME="${HOMEDIR}/st"
 TMUX=$(which tmux)
+AGRESSIVE_TEMP="/tmp/agressive"
 
 ##############################
 ########## CORES #############
@@ -216,10 +217,9 @@ HOMEDIR="/home/${usuario}"
 SHOUT_HOME="${HOMEDIR}/sc"
 TRANS_HOME="${HOMEDIR}/st"
 TMUX=$(which tmux)
-TEMP_PATH="$AGRESSIVE_TEMP"
-#SHOUT_BIN="${TEMP_PATH}/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz"
-SHOUT_BIN="${TEMP_PATH}/sistema/downloads/sc_serv2_linux_x64-latest.tar.gz"
-TRANS_BIN="${TEMP_PATH}/sistema/downloads/sc_trans_linux_x64_10_07_2011.tar.gz"
+#SHOUT_BIN="${AGRESSIVE_TEMP}/sistema/downloads/sc_serv2_linux_x64_07_31_2011.tar.gz"
+SHOUT_BIN="${AGRESSIVE_TEMP}/sistema/downloads/sc_serv2_linux_x64-latest.tar.gz"
+TRANS_BIN="${AGRESSIVE_TEMP}/sistema/downloads/sc_trans_linux_x64_10_07_2011.tar.gz"
 
 echo
 read -p "Qual será a pasta do agreSSive no servidor Web?? [Padrão: ${webpath}] " webp

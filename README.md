@@ -1,6 +1,6 @@
-# agreSSive  
+# agreSSive
 
-[![Build Status](https://travis-ci.org/sistematico/agressive.svg?branch=master)](https://travis-ci.org/sistematico/agressive)  
+[![Build Status](https://travis-ci.org/sistematico/agressive.svg?branch=master)](https://travis-ci.org/sistematico/agressive)
 
 Streaming de Rádio <b>muito</b> fácil!
 
@@ -16,7 +16,7 @@ Streaming de Rádio <b>muito</b> fácil!
 
 ## Instalação automática
 
-```  
+```
 bash <(curl -s -L http://bit.ly/agrsv)
 ```
 
@@ -34,7 +34,7 @@ bash <(curl -s -L http://bit.ly/agrsv)
 * Proteção contra pedidos repetidos, por música e por artista.
 
 ## Ajude
-Se você gostou do meu trabalho e resolveu usa-lo ou ele ajudou de alguma forma, considere uma doação de qualquer valor usando o Paypal:  
+Se você gostou do meu trabalho e resolveu usa-lo ou ele ajudou de alguma forma, considere uma doação de qualquer valor usando o Paypal:
 <a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=QCHXHH4NDDAVE' target='_blank'>
 <img src='https://sistematico.github.io/img/doacao.png' alt='Doe e ajude' />
 </a>
