@@ -66,10 +66,10 @@ logo
 
 [ "$(id -u)" != "0" ] && echo "Este script deve ser executado apenas como root." 1>&2 && exit 1
 #[[ "$(find / -iname which 2> /dev/null)" == "" ]] && echo "which não encontrado. Abortando..." >&2 && exit 1
-[ ! -x $(which tmux) ] && echo "which não encontrado. Abortando..." >&2 && exit 1
-[ ! -x $(which tmux) ] && echo "tmux não encontrado. Abortando..." >&2 && exit 1
-[ ! -x $(which nginx) ] && echo "nginx não encontrado. Abortando..." >&2 && exit 1
-[ ! -x $(which git) ] && echo "git não encontrado. Abortando..." >&2 && exit 1
+[ ! $(which tmux) ] && echo "which não encontrado. Abortando..." >&2 && exit 1
+[ ! $(which tmux) ] && echo "tmux não encontrado. Abortando..." >&2 && exit 1
+[ ! $(which nginx) ] && echo "nginx não encontrado. Abortando..." >&2 && exit 1
+[ ! $(which git) ] && echo "git não encontrado. Abortando..." >&2 && exit 1
 
 if [ $internet_check == true ]; then
   ping -q -c1 google.com > /dev/null 2> /dev/null
@@ -228,7 +228,7 @@ webp=${webp:-$webpath}
 webpath=$webp
 
 usuario_web=$(head -n3 /etc/nginx/nginx.conf 2> /dev/null | grep user | awk '{print $2}' | tr -d ';')
-if [ $usuario_web == "" ]; then
+if [ "$usuario_web" == "" ]; then
   usuario_web="www-data"
 fi
 
