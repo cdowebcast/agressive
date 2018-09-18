@@ -227,7 +227,7 @@ read -p "Qual será a pasta do agreSSive no servidor Web?? [Padrão: ${webpath}]
 webp=${webp:-$webpath}
 webpath=$webp
 
-usuario_web=$(head -n3 /etc/nginx/nginx.conf | grep user | awk '{print $2}' | tr -d ';' 2> /dev/null)
+usuario_web=$(head -n3 /etc/nginx/nginx.conf 2> /dev/null | grep user | awk '{print $2}' | tr -d ';')
 if [ $usuario_web == "" ]; then
   usuario_web="www-data"
 fi
