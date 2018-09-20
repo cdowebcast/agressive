@@ -1,6 +1,9 @@
 <?php
 
+// Mínimo de tempo por artista
 $amin = 3;
+
+// Mínimo de tempo por faixa
 $tmin = 5;
 
 $musicaspath = '/usr/local/musicas';

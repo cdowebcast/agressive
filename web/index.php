@@ -24,7 +24,7 @@
     <div class="container">
       <img id="logo" src="img/agressive.png"/>
       <h1>Agressive</h1>
-      <div id="player"><audio id="audio-player" src="http://localhost:8000/;" controls autoplay preload="none"></audio></div>
+      <div id="player"><audio id="audio-player" src="http://<?php echo $_SERVER['HTTP_HOST']; ?>:8000/;" controls autoplay preload="none"></audio></div>
       <div class="medialinks">
         <a id="link-github" href="https://github.com/sistematico/agressive" target="_blank"><img src="img/github.svg" alt="GitHub" class="icon-medialink"></a>
       </div>
